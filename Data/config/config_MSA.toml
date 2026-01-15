@@ -1,0 +1,50 @@
+# instrument
+disperser = "G140H"
+filter = "F100LP"
+
+# considered redshift for MSA
+
+# offset from center, in arcsec
+# parallel and perpendicular indicate dispersion and cross-dispersion directions
+offsetParallel = 0
+offsetPerpendicular = 0
+
+# slitlet configuration for MSA
+slitletSizePerpendicular = "0.46 arcsec"
+slitletSizeParallel = "0.2 arcsec"
+supportBarSize = "0.07 arcsec"
+
+# observation configuration
+# number of dithers
+# dither size in arcsec
+# number of slitlet
+# number of steps in parallel
+# single exposure time
+# rotation of the slitlets, counter-clock wise. 
+nDithers = 7
+ditherSize = "0.075 arcsec"
+nSlitlets = 5
+nSteps = 9
+exposureTime = "19.5 min"
+rotate = "0 deg"
+
+# background from jwst_backgrounds
+useJBT = true
+obsRA = "223.555 deg"
+obsDec = "-54.395 deg"
+threshold = 1.1
+thisDay = 171
+
+# spectrum rebin
+numSpecWaveBins = 10
+
+# instrument, darkCurrent and readOut are in (e/s) and (e) respectively, with e omitted
+darkCurrent = "0.01 /s"
+readOut = 10
+aperture = "6.5 m"
+
+# display
+displaySpectrumAtPixel = [[20, 4], [20, 3], [20, 5], [18, 4], [22, 4]]
+displayBoxSize = "3.0 arcsec"
+displayEmissionLines = ["Ha6563", "Hb4861", "[SII]6716"]
+displayAround = "Ha6563"
