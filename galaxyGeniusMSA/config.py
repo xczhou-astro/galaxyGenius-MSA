@@ -1,11 +1,6 @@
 import os
-from termcolor import colored
 import numpy as np
-from pathlib import Path
 from tomlkit import parse, dumps
-from typing import Union
-from copy import deepcopy
-import astropy.units as u
 from .utils import galaxygenius_data_dir, assign_unit
 
 class Configuration:
