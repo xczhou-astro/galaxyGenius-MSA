@@ -268,10 +268,6 @@ def binned_statistic_2d_numba(
     x, y, values, bins_perpendicular, 
     bins_parallel, statistic='mean'):
     
-    # x direction is perpendicular, y direction is parallel
-    x = -x
-    y = -y
-    
     # Extract number of bins from bin edge arrays (length n+1 for n bins)
     nx = int(len(bins_perpendicular) - 1)
     ny = int(len(bins_parallel) - 1)
@@ -349,7 +345,9 @@ def binned_statistic_2d_numba(
                     res[i, j] = 0.0 # Std of a single point is 0
                 else:
                     res[i, j] = np.nan
-                    
+    
+    res = np.rot90(res, 1)
+    
     return res
 
 def calc_stats(coords: np.ndarray, values: np.ndarray,

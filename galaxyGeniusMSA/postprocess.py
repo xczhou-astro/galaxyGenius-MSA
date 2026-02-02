@@ -1792,6 +1792,9 @@ class PostProcess:
         fig, ax = plt.subplots(1, len(properties_array),
                                figsize=(5 * len(properties_array), 4))
         
+        if len(properties_array) == 1:
+            ax = [ax]
+        
         for i, prop in enumerate(properties_array.keys()):
             array = properties_array[prop]
             unit = properties_units[prop]
