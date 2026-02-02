@@ -1,0 +1,187 @@
+# if process subhalos on the fly using requests
+useRequests = false
+
+# your api key for TNG simulations
+apiKey = "34a4698eb65e15b8ebfd65a336ae94bb"
+
+# simulation name
+simulation = "TNG50-1"
+
+# hydrodynamic solve, VoronoiMesh or smoothParticle for gas particles
+hydrodynamicSolver = "VoronoiMesh"
+
+# the home path for TNG simulations
+TNGPath = "../../TNG100"
+
+# the home path for postprocessing of TNG simulations
+# Both TNGPath and postprocessingPath are needed. 
+postprocessingPath = "../../postprocessing"
+
+# working directory for running SKIRT
+workingDir = "run"
+
+# simulation mode for SKIRT, can be ExtinctionOnly, DustEmission or NoMedium
+# ExtinctionOnly is used when extinction and scattering should be considered
+# DustEmission is used when extinction and scattering along with secondary emission should be considered
+# NoMedium is an ideal case with no dust elements.
+simulationMode = "ExtinctionOnly"
+
+# if dusts are considered
+# Be True if simulationMode is DustEmission
+includeDust = true
+
+# dust emission type: Equilibrium or Stochastic, if simulationMode is DustEmission
+dustEmissionType = "Equilibrium"
+
+# dust model, ZubkoDustMix, DraineLiDustMix or ThemisDustMix
+dustModel = "ThemisDustMix"
+
+# if include velocity
+includeVelocity = true
+
+# wavelength range for radiative transfer, *not* in rest-frame
+minWaveRT = "0.1 um"
+maxWaveRT = "2.0 um"
+numWaveRT = 3000
+waveGridRT = "Linear"
+
+# wavelength range for output, *not* in rest-frame
+minWaveOutput = "0.97 um"
+maxWaveOutput = "1.82 um"
+numWaveOutput = 3000
+waveGridOutput = "Linear"
+
+# particles are selected in a box with boxLength = halfStellarMassRadius * boxLengthScale
+boxLengthScale = 40
+
+# maximum boxlength, in kpc
+maxBoxLength = "300.0 kpc"
+
+# octree min/max level refinement for dust calculation of SKIRT
+minLevel = 6
+maxLevel = 10
+
+# num of photo packets
+numPackets = 1e6
+
+# SED family for quenched star particles (> 10 Myr), BC03 or FSPS
+starSEDFamily = "FSPS"
+
+# Initial mass function for quenched star particles
+# Chabrier or Salpeter for BC03 SED family
+# Chabrier, Kroupa or Salpeter for FSPS family
+initialMassFunction = "Chabrier"
+
+# star forming SED family
+starformingSEDFamily = "MAPPINGS"
+
+# stellar mass range for subhalos in Msun, inf for infinite
+minStellarMass = "10000000000.0 solMass"
+maxStellarMass = "inf solMass"
+
+# if use face-on and edge-on angles derived by angular momentum
+faceAndEdge = true
+
+# num of instrument views
+numViews = 3
+
+# if generate views from uniform distribution
+randomViews = false
+
+# should be filled when randomViews is False, separated by commas
+inclinations = [0, 90, 180]
+azimuths = [0, 90, 180]
+
+# field of view for output, in arcsec, equals box size if 0
+fieldOfView = "0.0 arcsec"
+
+# pixel scale for detector
+pixelScale = "0.1 arcsec"
+
+# oversample factor, oversample both dataCube (SKIRT output) and PSF
+oversample = 4
+
+# unit type of image output, can be electron or flux
+unit = "flux_lambda"
+
+# snapshot ID
+snapNum = 50
+
+# snapshot redshift, must be provided if inLocal is False
+snapRedshift = 1.0
+
+# viewing redshift, should be close to snapRedshift, 
+# For generating galaxies at continous redshift with a small offset on snapRedshift
+# For example, viewRedshift can be 0.105 for snapshot-91 at 0.1
+viewRedshift = 1.0
+
+
+# if view galaxy in local
+inLocal = false
+
+# viewing distance, in Mpc, must be provided if inLocal is True
+viewDistance = "50.0 Mpc"
+
+# number of threads
+numThreads = 24
+
+# age threshold for discriminating star-forming or quenched star particles, in Myr
+ageThreshold = "10.0 Myr"
+
+# logCompactness for star-forming star particles, sample from a normal distribution
+# from Kapoor et al. 2021
+logCompactnessMean = 5
+logCompactnessStd = 0.4
+
+# for star-forming star particles, log10[(Pressure/k_B)/cm^-3 K] = logPressure
+logPressure = 5
+
+# if use constant covering factor
+constantCoveringFactor = false
+
+# constant covering factor, if constantCoveringFactor is True
+# from Groves et al. 2008
+coveringFactor = 0.2
+
+# in Myr, covering factor is f = e^(-t / PDRClearingTimescale), if constantCoveringFactor is False
+# from Baes et al.2024
+PDRClearingTimescale = "3.0 Myr"
+
+# in K, temperature of gas particles lower than temperatureThreshold will be considered as dust
+temperatureThreshold = "8000.0 K"
+
+# PAH fraction, only for TODDLERS in NoMedium mode
+pahfraction = "High"
+
+# sed mode for TODDLERS, SFRNormalized or Cloud
+sedMode = "Cloud"
+
+# stellar template for TODDLERS, SB99Kroupa100Sin, BPASSChab100Bin or BPASSChab300Bin
+stellarTemplate = "BPASSChab100Bin"
+
+# sfr period, only used in SFRNormalized mode
+sfrPeriod = 10
+
+# star formation efficiency for TODDLERS
+starFormationEfficiency = 0.025
+
+# cloud number density for TODDLERS
+cloudNumberDensity = "320.0 1 / cm3"
+
+# alpha for power-law distribution of cloud mass for TODDLERS
+alpha = -1.8
+
+# scaling for TODDLERS
+scaling = 1
+
+# Fraction of the metallic gas locked up in dust
+massFraction = 0.3
+
+# dust-containing ISM (DISM) model, can be Camps_2016 or Torrey_2012
+DISMModel = "Camps_2016"
+
+# number of bins for dust grains
+numSilicateSizes=15
+numGraphiteSizes=15
+numPAHSizes=15
+numHydrocarbonSizes = 15

@@ -1,0 +1,168 @@
+2026-02-01 10:01:59,347 - INFO - Initializing PreProcess class.
+2026-02-01 10:01:59,362 - INFO - Use cosmology Planck15 at redshift 1.0
+2026-02-01 10:01:59,777 - INFO - ------Inputting subhalo particle file------
+2026-02-01 10:02:54,416 - INFO - Initializing PreProcess class.
+2026-02-01 10:02:54,417 - INFO - Use cosmology Planck15 at redshift 1.0
+2026-02-01 10:02:54,731 - INFO - ------Inputting subhalo particle file------
+2026-02-01 10:03:10,904 - INFO - Changed faceAndEdge from True to False
+2026-02-01 10:03:10,905 - INFO - Changed numViews from 3 to 1
+2026-02-01 10:03:10,906 - INFO - Changed randomViews from False to False
+2026-02-01 10:03:10,907 - INFO - Changed inclinations from [0, 90, 180] to [0]
+2026-02-01 10:03:10,907 - INFO - Changed azimuths from [0, 90, 180] to [0]
+2026-02-01 10:03:10,909 - INFO - Use cosmology Planck15 at redshift 1.0
+2026-02-01 10:03:16,246 - INFO - Star particles: 13447073
+2026-02-01 10:05:35,049 - INFO - Star forming regions: 43342
+2026-02-01 10:05:35,837 - INFO - Dust: 1516028
+2026-02-01 10:05:50,130 - INFO - Creating .ski file.
+2026-02-01 10:05:50,133 - INFO - Using 1 specified views
+2026-02-01 10:05:50,133 - INFO - View 0: Inclination = 0.00 deg, Azimuth = 0.00 deg
+2026-02-01 10:05:50,145 - INFO - ------estimate memory usage------
+2026-02-01 10:05:50,145 - INFO - numViews: 1
+2026-02-01 10:05:50,146 - INFO - numSpatialPixels: 360
+2026-02-01 10:05:50,147 - INFO - numWavelengthPixels: 3000
+2026-02-01 10:05:50,148 - INFO - Estimated memory usage: 3.11 GB
+2026-02-01 10:05:50,150 - INFO - Initializing DataGeneration class.
+2026-02-01 10:05:50,156 - INFO - Running SKIRT
+2026-02-01 10:05:50,157 - INFO - Subhalo ID: 0
+2026-02-01 10:27:38,903 - INFO - Cleaning up working directory
+2026-02-01 10:28:01,404 - INFO - Viewing at inclination: 0.00 deg, azimuth: 0.00 deg
+2026-02-01 10:28:04,646 - INFO - MSA-3D simulation starts...
+2026-02-01 10:28:04,817 - INFO - Number of wavelengths by resolution: 1644
+2026-02-01 10:28:05,152 - INFO - Number of wavelengths by pixel: 3617
+2026-02-01 10:28:05,153 - INFO - Step 1: Processing spatial dimension (PSF convolution and transformation)
+2026-02-01 10:28:05,153 - INFO - Getting PSF cubes...
+2026-02-01 10:28:05,163 - INFO - Use stored PSF cube in ./cache/psf_cube.fits.
+2026-02-01 10:28:06,545 - INFO - PSF cube shape: (3000, 192, 192)
+2026-02-01 10:28:06,546 - INFO - Data cube shape: (3000, 360, 360)
+2026-02-01 10:28:25,647 - INFO - MSA cube shape after spatial processing: (3000, 40, 18)
+2026-02-01 10:28:25,648 - INFO - Time taken for step 1: 20.49 seconds
+2026-02-01 10:28:25,649 - INFO - Step 2: Processing spectral dimension (Simulation of spectra)
+2026-02-01 10:28:25,649 - INFO - Getting JWST background...
+2026-02-01 10:28:25,650 - INFO - Use cached background emission file.
+2026-02-01 10:28:51,639 - INFO - Convert unit to flux_lambda...
+2026-02-01 10:28:54,467 - INFO - Time taken for step 2: 28.81 seconds
+2026-02-01 10:28:54,468 - INFO - MSA-3D simulation completed. Output shape: (40, 9, 4, 1644)
+2026-02-01 10:28:54,468 - INFO - Saving data tensor to MSA_mock/Subhalo_0/MSA_dataTensor.fits...
+2026-02-01 10:28:54,528 - INFO - Illustrating MSA...
+2026-02-01 10:29:01,628 - INFO - Getting truth properties...
+2026-02-01 10:29:01,629 - INFO - Calculating default properties...
+2026-02-01 10:29:01,629 - INFO - Record properties: ['MetallicityStarFormingRegion', 'MetallicityGas', 'LOSVelocity', 'Mass', 'VelDisp', 'NumberStarformingRegion']
+2026-02-01 10:29:01,630 - INFO - Use particle file saved in preprocessing: dataCubes/Subhalo_0/Subhalo_0_particles.h5.
+2026-02-01 10:33:11,307 - INFO - ------Inputting subhalo particle file------
+2026-02-01 10:41:13,183 - INFO - Initializing PreProcess class.
+2026-02-01 10:41:13,184 - INFO - Use cosmology Planck15 at redshift 1.0
+2026-02-01 10:41:13,498 - INFO - ------Inputting subhalo particle file------
+2026-02-01 10:41:17,609 - INFO - Use cosmology Planck15 at redshift 1.0
+2026-02-01 10:41:20,994 - INFO - Star particles: 7109552
+2026-02-01 10:42:56,051 - INFO - Star forming regions: 6491
+2026-02-01 10:42:56,175 - INFO - Dust: 408207
+2026-02-01 10:43:00,207 - INFO - Creating .ski file.
+2026-02-01 10:43:00,210 - INFO - ------Calculating face-on and edge-on viewing angles------
+2026-02-01 10:43:02,201 - INFO - Face-on angle (inc, azi): 91.12 deg, 23.19 deg
+2026-02-01 10:43:02,202 - INFO - Edge-on angle (inc, azi): 178.88 deg, 203.19 deg
+2026-02-01 10:43:02,204 - INFO - Using calculated face-on and edge-on angles
+2026-02-01 10:43:02,204 - INFO - View 0: Inclination = 91.12 deg, Azimuth = 23.19 deg
+2026-02-01 10:43:02,205 - INFO - View 1: Inclination = 178.88 deg, Azimuth = 203.19 deg
+2026-02-01 10:43:02,215 - INFO - ------estimate memory usage------
+2026-02-01 10:43:02,215 - INFO - numViews: 2
+2026-02-01 10:43:02,216 - INFO - numSpatialPixels: 336
+2026-02-01 10:43:02,217 - INFO - numWavelengthPixels: 3000
+2026-02-01 10:43:02,217 - INFO - Estimated memory usage: 5.419 GB
+2026-02-01 10:43:02,219 - INFO - Initializing DataGeneration class.
+2026-02-01 10:43:02,224 - INFO - Running SKIRT
+2026-02-01 10:43:02,225 - INFO - Subhalo ID: 1
+2026-02-01 19:24:14,155 - INFO - Initializing PreProcess class.
+2026-02-01 19:24:14,156 - INFO - Use cosmology Planck15 at redshift 1.0
+2026-02-01 19:24:14,490 - INFO - ------Inputting subhalo particle file------
+2026-02-01 19:24:14,508 - INFO - Processing subhalo 1...
+2026-02-01 19:24:18,474 - INFO - Use cosmology Planck15 at redshift 1.0
+2026-02-01 19:24:21,770 - INFO - Star particles: 7109552
+2026-02-01 19:25:55,610 - INFO - Star forming regions: 6491
+2026-02-01 19:25:55,743 - INFO - Dust: 408207
+2026-02-01 19:25:59,870 - INFO - Creating .ski file.
+2026-02-01 19:25:59,873 - INFO - ------Calculating face-on and edge-on viewing angles------
+2026-02-01 19:26:00,730 - INFO - Face-on angle (inc, azi): 91.12 deg, 23.19 deg
+2026-02-01 19:26:00,732 - INFO - Edge-on angle (inc, azi): 178.88 deg, 203.19 deg
+2026-02-01 19:26:00,734 - INFO - Using calculated face-on and edge-on angles
+2026-02-01 19:26:00,734 - INFO - View 0: Inclination = 91.12 deg, Azimuth = 23.19 deg
+2026-02-01 19:26:00,735 - INFO - View 1: Inclination = 178.88 deg, Azimuth = 203.19 deg
+2026-02-01 19:26:00,748 - INFO - ------estimate memory usage------
+2026-02-01 19:26:00,749 - INFO - numViews: 2
+2026-02-01 19:26:00,749 - INFO - numSpatialPixels: 336
+2026-02-01 19:26:00,749 - INFO - numWavelengthPixels: 3000
+2026-02-01 19:26:00,750 - INFO - Estimated memory usage: 5.419 GB
+2026-02-01 19:26:00,752 - INFO - Initializing DataGeneration class.
+2026-02-01 19:26:00,756 - INFO - Running SKIRT
+2026-02-01 19:26:00,756 - INFO - Subhalo ID: 1
+2026-02-01 19:37:17,265 - INFO - Cleaning up working directory
+2026-02-01 19:37:29,825 - INFO - Viewing at inclination: 91.12 deg, azimuth: 23.19 deg
+2026-02-01 19:37:32,717 - INFO - MSA-3D simulation starts...
+2026-02-01 19:37:32,943 - INFO - Number of wavelengths by resolution: 1644
+2026-02-01 19:37:33,357 - INFO - Number of wavelengths by pixel: 3617
+2026-02-01 19:37:33,357 - INFO - Step 1: Processing spatial dimension (PSF convolution and transformation)
+2026-02-01 19:37:33,358 - INFO - Getting PSF cubes...
+2026-02-01 19:37:33,369 - INFO - Use stored PSF cube in ./cache/psf_cube.fits.
+2026-02-01 19:37:35,550 - INFO - PSF cube shape: (3000, 192, 192)
+2026-02-01 19:37:35,551 - INFO - Data cube shape: (3000, 336, 336)
+2026-02-01 19:37:42,734 - INFO - MSA cube shape after spatial processing: (3000, 40, 18)
+2026-02-01 19:37:42,735 - INFO - Time taken for step 1: 9.38 seconds
+2026-02-01 19:37:42,735 - INFO - Step 2: Processing spectral dimension (Simulation of spectra)
+2026-02-01 19:37:42,736 - INFO - Getting JWST background...
+2026-02-01 19:37:42,737 - INFO - Use cached background emission file.
+2026-02-01 19:38:09,814 - INFO - Convert unit to flux_lambda...
+2026-02-01 19:38:12,398 - INFO - Time taken for step 2: 29.66 seconds
+2026-02-01 19:38:12,398 - INFO - MSA-3D simulation completed. Output shape: (40, 9, 4, 1644)
+2026-02-01 19:38:12,399 - INFO - Saving data tensor to MSA_mock/Subhalo_1/MSA_dataTensor.fits...
+2026-02-01 19:38:12,498 - INFO - Illustrating MSA...
+2026-02-01 19:38:19,747 - INFO - Getting truth properties...
+2026-02-01 19:38:19,747 - INFO - Calculating default properties...
+2026-02-01 19:38:19,748 - INFO - Record properties: ['MetallicityStarFormingRegion', 'MetallicityGas', 'LOSVelocity', 'Mass', 'VelDisp', 'NumberStarformingRegion']
+2026-02-01 19:38:19,748 - INFO - Use particle file saved in preprocessing: dataCubes/Subhalo_1/Subhalo_1_particles.h5.
+2026-02-01 19:38:43,363 - INFO - ------Inputting subhalo particle file------
+2026-02-01 19:45:52,611 - INFO - Initializing PreProcess class.
+2026-02-01 19:45:52,612 - INFO - Use cosmology Planck15 at redshift 1.0
+2026-02-01 19:45:52,891 - INFO - ------Inputting subhalo particle file------
+2026-02-01 19:45:52,905 - INFO - Processing subhalo 70415...
+2026-02-01 19:46:00,571 - INFO - Use cosmology Planck15 at redshift 1.0
+2026-02-01 19:46:04,966 - INFO - Star particles: 10124417
+2026-02-01 19:47:34,325 - INFO - Star forming regions: 10223
+2026-02-01 19:47:34,675 - INFO - Dust: 698796
+2026-02-01 19:47:43,909 - INFO - Creating .ski file.
+2026-02-01 19:47:43,912 - INFO - ------Calculating face-on and edge-on viewing angles------
+2026-02-01 19:47:46,184 - INFO - Face-on angle (inc, azi): 83.29 deg, -98.45 deg
+2026-02-01 19:47:46,187 - INFO - Edge-on angle (inc, azi): 173.29 deg, -98.45 deg
+2026-02-01 19:47:46,190 - INFO - Using calculated face-on and edge-on angles
+2026-02-01 19:47:46,191 - INFO - View 0: Inclination = 83.29 deg, Azimuth = -98.45 deg
+2026-02-01 19:47:46,191 - INFO - View 1: Inclination = 173.29 deg, Azimuth = -98.45 deg
+2026-02-01 19:47:46,201 - INFO - ------estimate memory usage------
+2026-02-01 19:47:46,202 - INFO - numViews: 2
+2026-02-01 19:47:46,202 - INFO - numSpatialPixels: 256
+2026-02-01 19:47:46,203 - INFO - numWavelengthPixels: 3000
+2026-02-01 19:47:46,204 - INFO - Estimated memory usage: 3.146 GB
+2026-02-01 19:47:46,206 - INFO - Initializing DataGeneration class.
+2026-02-01 19:47:46,211 - INFO - Running SKIRT
+2026-02-01 19:47:46,211 - INFO - Subhalo ID: 70415
+2026-02-01 20:03:02,586 - INFO - Cleaning up working directory
+2026-02-01 20:03:18,535 - INFO - Viewing at inclination: 83.29 deg, azimuth: -98.45 deg
+2026-02-01 20:03:20,153 - INFO - MSA-3D simulation starts...
+2026-02-01 20:03:20,330 - INFO - Number of wavelengths by resolution: 1644
+2026-02-01 20:03:20,690 - INFO - Number of wavelengths by pixel: 3617
+2026-02-01 20:03:20,690 - INFO - Step 1: Processing spatial dimension (PSF convolution and transformation)
+2026-02-01 20:03:20,691 - INFO - Getting PSF cubes...
+2026-02-01 20:03:20,697 - INFO - Use stored PSF cube in ./cache/psf_cube.fits.
+2026-02-01 20:03:22,069 - INFO - PSF cube shape: (3000, 192, 192)
+2026-02-01 20:03:22,070 - INFO - Data cube shape: (3000, 256, 256)
+2026-02-01 20:03:29,444 - INFO - MSA cube shape after spatial processing: (3000, 40, 18)
+2026-02-01 20:03:29,444 - INFO - Time taken for step 1: 8.75 seconds
+2026-02-01 20:03:29,445 - INFO - Step 2: Processing spectral dimension (Simulation of spectra)
+2026-02-01 20:03:29,445 - INFO - Getting JWST background...
+2026-02-01 20:03:29,446 - INFO - Use cached background emission file.
+2026-02-01 20:03:33,377 - INFO - Convert unit to flux_lambda...
+2026-02-01 20:03:33,881 - INFO - Time taken for step 2: 4.43 seconds
+2026-02-01 20:03:33,881 - INFO - MSA-3D simulation completed. Output shape: (40, 9, 4, 1644)
+2026-02-01 20:03:33,882 - INFO - Saving data tensor to MSA_mock/Subhalo_70415/MSA_dataTensor.fits...
+2026-02-01 20:03:33,926 - INFO - Illustrating MSA...
+2026-02-01 20:03:39,987 - INFO - Getting truth properties...
+2026-02-01 20:03:39,988 - INFO - Calculating default properties...
+2026-02-01 20:03:39,988 - INFO - Record properties: ['MetallicityStarFormingRegion', 'MetallicityGas', 'LOSVelocity', 'Mass', 'VelDisp', 'NumberStarformingRegion']
+2026-02-01 20:03:39,989 - INFO - Use particle file saved in preprocessing: dataCubes/Subhalo_70415/Subhalo_70415_particles.h5.

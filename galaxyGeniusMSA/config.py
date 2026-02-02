@@ -1,12 +1,17 @@
 import os
 import numpy as np
 from tomlkit import parse, dumps
+import shutil
 from .utils import galaxygenius_data_dir, assign_unit
 
 class Configuration:
     
     def __init__(self):
-        
+        """
+        The configuration class loads and manages configuration files for galaxyGenius-MSA. 
+        It provides methods to read TOML configuration files, load main and MSA-specific settings, 
+        merge configurations, convert to saveable types, and save configurations to disk. 
+        """
         self.dataDir = galaxygenius_data_dir()
         self.main_config_template = self.__read_config(
             os.path.join(self.dataDir, 'config/config.toml')
@@ -96,3 +101,14 @@ class Configuration:
         else:
             self.config = self.main_config_template
             self.msa_config = self.msa_config_template
+            
+    def init(self, workspace: str):
+        
+        shutil.copy(
+            self.main_config_template,
+            os.path.join(workspace, 'config.toml')
+        )
+        shutil.copy(
+            self.msa_config_template,
+            os.path.join(workspace, 'config_MSA.toml')
+        )
