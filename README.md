@@ -5,7 +5,7 @@ Please refer to [this](https://jwst-docs.stsci.edu/jwst-near-infrared-spectrogra
 For the JWST MSA-3D project, please refer to [I. Barišić et al. 2025](https://iopscience.iop.org/article/10.3847/1538-4357/ada617) and [M. Ju et al. 2025](https://iopscience.iop.org/article/10.3847/2041-8213/ada150) for more details.  
 
 ## Workflow
-[!Workflow](assets/workflow.png)
+![Workflow](assets/workflow.png)
 
 ## Results
 
@@ -48,7 +48,7 @@ and
 [stpsf](https://stpsf.readthedocs.io/en/latest/#)
 [jwst_backgrounds](https://github.com/spacetelescope/jwst_backgrounds)  
 
-Notes:
+Notes:  
 illustris_python: read subhalos from TNG snapshots.  
 stpsf: generate PSFs of JWST instrument.  
 jwst_backgrounds: generate background noise curve of JWST instrument.  
