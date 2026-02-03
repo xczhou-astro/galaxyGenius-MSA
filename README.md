@@ -46,14 +46,9 @@ Other intermediate data (dataCubes from SKIRT and cached PSF cubes) are shared a
 and
 
 [SKIRT](https://skirt.ugent.be/root/_home.html)  
-[illustris_python](https://github.com/illustristng/illustris_python)  
-[stpsf](https://stpsf.readthedocs.io/en/latest/#)  
-[jwst_backgrounds](https://github.com/spacetelescope/jwst_backgrounds)  
-
-Notes:  
-illustris_python: read subhalos from TNG snapshots.  
-stpsf: generate PSFs of JWST instrument.  
-jwst_backgrounds: generate background noise curve of JWST instrument.  
+[illustris_python](https://github.com/illustristng/illustris_python) : for reading subhalos from TNG snapshots.  
+[stpsf](https://stpsf.readthedocs.io/en/latest/#) : for generating PSFs of JWST instrument.  
+[jwst_backgrounds](https://github.com/spacetelescope/jwst_backgrounds) : for generating background noise curve of JWST instrument  
 
 ## Installation 
 
@@ -82,3 +77,4 @@ To include more truth properties, please refer to `tutorial/moreTruthProperties.
 
 
 `tutorial/imageSimulation.py`: A script to simulate galaxy images by JWST NIRCam (0.031 arcsec/pixel) of a subhalo using galaxyGenius. Please be sure that [galaxyGenius](https://github.com/xczhou-astro/galaxyGenius) is downloaded.  
+
