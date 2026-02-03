@@ -1,0 +1,15 @@
+# Python cache
+galaxyGeniusMSA/__pycache__/
+galaxyGeniusMSA/__pycache__/**
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+

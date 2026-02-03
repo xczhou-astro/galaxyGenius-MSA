@@ -9,9 +9,9 @@ For the JWST MSA-3D project, please refer to [I. Barišić et al. 2025](https://
 
 ## Results
 
-![subhalo_70415](assets/subhalo-70415.jpg)
-![subhalo_1](assets/subhalo-1.jpg)
-![subhalo_0](assets/subhalo-0.jpg)
+![subhalo_70415](assets/subhalo-70415_unbordered.jpg)
+![subhalo_1](assets/subhalo-1_unbordered.jpg)
+![subhalo_0](assets/subhalo-0_unbordered.jpg)
 
 
 The results for three subhalos (ID: 0, 1, 70415 for snapshot 50 of TNG50-1 simulation) are saved in `tutorial/MSA_mock/Subhalo_(ID)`:  
@@ -68,7 +68,7 @@ Please set the `GALAXYGENIUS_DATA_DIR` environment variable in `~/.bashrc` to th
 
 ## Usage
 Please refer to `tutorial/pipeline.py` for an example.  
-For more details on configurations in `config.toml` and `config_MSA.toml`, and other usage, please refer to [documentation](https://).  
+For more details on configurations in `config.toml` and `config_MSA.toml`, and other usage, please refer to [documentation](https://) and `notebook/usage.ipynb`.  
 
 To include more truth properties, please refer to `tutorial/moreTruthProperties.py` for detailed description.
 
@@ -77,3 +77,5 @@ To include more truth properties, please refer to `tutorial/moreTruthProperties.
 `download_subhalos.py`: a useful script to download subhalos from TNG simulation by Web-based API. Particle data of desired subhalos can be downloaded instead of the entire snapshot. Please refer to the [website](https://www.tng-project.org/data/) for more details and register an account to obtain an API key.  
 
 `precompile_numba_functions.py`: To accelerate postprocessing, some functions are decorated with [numba](https://numba.pydata.org/). They require compilation at first run, this script precompiles all numba functions to initialize and cache them, which can be used in subsequent runs. If you install galaxyGeniusMSA by `pip install .`, the `precompile_numba_functions.py` will be executed automatically. Otherwise, you can manually run it by `python precompile_numba_functions.py`.  
+
+`tutorial/imageSimulation.py`: A script to simulate galaxy images by JWST NIRCam (0.031 arcsec/pixel) of a subhalo using galaxyGenius. Please be sure that [galaxyGenius](https://github.com/xczhou-astro/galaxyGenius) is downloaded.  
