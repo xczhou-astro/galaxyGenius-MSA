@@ -1789,6 +1789,10 @@ class PostProcess:
     def _display_properties(self, properties_array: dict,
                             properties_units: dict, save_path: str):
         
+        if len(properties_array) == 0:
+            self.logger.warning('No properties to display.')
+            return
+        
         fig, ax = plt.subplots(1, len(properties_array),
                                figsize=(5 * len(properties_array), 4))
         

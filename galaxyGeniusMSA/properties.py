@@ -346,7 +346,7 @@ def binned_statistic_2d_numba(
                 else:
                     res[i, j] = np.nan
     
-    res = np.rot90(res, 1)
+    res = res[::-1, :]
     
     return res
 
@@ -364,7 +364,7 @@ def calc_stats(coords: np.ndarray, values: np.ndarray,
     bins_parallel = bins_parallel.astype(np.float32)
     
     stats = binned_statistic_2d_numba(
-        coords[:, 1], coords[:, 0], values, 
+        coords[:, 0], coords[:, 1], values, 
         bins_perpendicular=bins_perpendicular,
         bins_parallel=bins_parallel,
         statistic=statistic
