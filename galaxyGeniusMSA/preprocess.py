@@ -2,7 +2,7 @@ import numpy as np
 import h5py
 import os
 import illustris_python as ill
-from astropy.cosmology import Planck15, Cosmology
+from astropy.cosmology import Planck15
 import astropy.units as u
 import astropy.constants as const
 import requests
@@ -12,17 +12,48 @@ from scipy.interpolate import interp1d
 from typing import Union
 import sys
 import time
-import gc
 import numba
 from typing import Union, Optional
-import shutil
 
 from .utils import Units, u2temp, custom_serialier, setup_logging, galaxygenius_data_dir, lookup_table, to_json_safe
+
+@numba.njit(fastmath=True, cache=True, parallel=True)
+def _angular_momentum(
+    coords: np.ndarray, 
+    vels: np.ndarray, 
+    masses: np.ndarray) -> tuple[np.float32, np.float32, np.float32]:
+        
+    Lx = np.float32(0.0)
+    Ly = np.float32(0.0)
+    Lz = np.float32(0.0)
+    
+    n = coords.shape[0]
+    
+    for i in numba.prange(n):
+        # Extract components for readability
+        rx, ry, rz = coords[i, 0], coords[i, 1], coords[i, 2]
+        vx, vy, vz = vels[i, 0], vels[i, 1], vels[i, 2]
+        m = masses[i]
+        
+        # Cross Product (r x v) * m and accumulate
+        Lx += (ry * vz - rz * vy) * m
+        Ly += (rz * vx - rx * vz) * m
+        Lz += (rx * vy - ry * vx) * m
+        
+    return Lx, Ly, Lz
 
 class PreProcess:
     
     def __init__(self, config: dict):
+        """
+        The PreProcess class handles the preprocessing of simulation data according to the provided configuration.
+        It generates necessary particle files and SKIRT .ski file for the preparation of radiative transfer simulation.
         
+        Parameters
+        ----------
+        config : dict
+            The configuration dictionary from the Configuration class in config.py
+        """
         self.config = config
         self.config_ori = config.copy() # set aside original config
         self.workingDir = self.config['workingDir']
@@ -35,12 +66,6 @@ class PreProcess:
         self.__init()
         # self.__precompile_numba()
         
-    def __precompile_numba(self):
-        dummy_pos = np.ones((10, 3), dtype=np.float64)
-        dummy_vel = np.ones((10, 3), dtype=np.float64)
-        dummy_mass = np.ones(10, dtype=np.float64)
-        self._angular_momentum(dummy_pos, dummy_vel, dummy_mass)
-        
         
     def __fage(self) -> interp1d:
         z = np.linspace(0, 4, 1000)
@@ -50,8 +75,6 @@ class PreProcess:
         return fage
         
     def __init(self):
-        
-        os.makedirs(self.workingDir, exist_ok=True)
         
         self.snapRedshift = self.config['snapRedshift']
         self.viewRedshift = self.config['viewRedshift']
@@ -356,27 +379,7 @@ class PreProcess:
         self.partRegion = self.partRegion * u.kpc
         
         return subhalo_info
-    
-    @staticmethod
-    @numba.njit(fastmath=True, cache=True)
-    def _angular_momentum(coords, vels, masses):
-        Lx = 0.0
-        Ly = 0.0
-        Lz = 0.0
-        n = coords.shape[0]
-        
-        for i in range(n):
-            # Extract components for readability
-            rx, ry, rz = coords[i, 0], coords[i, 1], coords[i, 2]
-            vx, vy, vz = vels[i, 0], vels[i, 1], vels[i, 2]
-            m = masses[i]
-            
-            # Cross Product (r x v) * m and accumulate
-            Lx += (ry * vz - rz * vy) * m
-            Ly += (rz * vx - rx * vz) * m
-            Lz += (rx * vy - ry * vx) * m
-            
-        return Lx, Ly, Lz
+
     
     def __calculate_angular_momentum_and_angles(self) -> tuple:
         
@@ -403,7 +406,7 @@ class PreProcess:
             
             # print(idx_columns)
             
-            particles = np.loadtxt(particle_file, usecols=idx_columns)
+            particles = np.loadtxt(particle_file, usecols=idx_columns, dtype=np.float32)
             positions = particles[:, :3]
             velocities = particles[:, 3:6]
             masses = particles[:, 6]
@@ -421,7 +424,11 @@ class PreProcess:
         velocities = velocities[mask]
         masses = masses[mask]
 
-        Lx, Ly, Lz = self._angular_momentum(positions, velocities, masses)
+        positions = positions.astype(np.float32)
+        velocities = velocities.astype(np.float32)
+        masses = masses.astype(np.float32)
+
+        Lx, Ly, Lz = _angular_momentum(positions, velocities, masses)
         L_norm = np.sqrt(Lx**2 + Ly**2 + Lz**2)
         
         Lx /= L_norm
@@ -638,6 +645,8 @@ class PreProcess:
             ValueError: If neither `subhaloInfo` nor `subhaloInfoFile` is provided.
         """
         
+        os.makedirs(self.workingDir, exist_ok=True)
+        
         self.inputMethod = 'subhaloFile'
         
         self.logger.info('------Inputting subhalo particle file------')
@@ -728,7 +737,9 @@ class PreProcess:
                 
         with open(os.path.join(self.workingDir, f'Subhalo_{subhalo_info["SubhaloID"]}.json'), 'w') as f:
             json.dump(to_json_safe(subhalo_info), f, indent=4)
-            
+        
+        self.logger.info(f'Processing subhalo {subhalo_info["SubhaloID"]}...')
+        
         self.subhalo_info = subhalo_info
             
         centerPosition = subhalo_info['SubhaloPos'].to(u.kpc)
@@ -1592,6 +1603,8 @@ class PreProcess:
             If required parameters are missing from subhaloInfo.
         """
         
+        os.makedirs(self.workingDir, exist_ok=True)
+        
         self.inputMethod = 'partInput'
         self.logger.info(f'------Inputing {partType} particles------')
         
@@ -1751,10 +1764,12 @@ class PreProcess:
         ----------
         data : dict
             A dictionary containing at least the following keys:
+            
                 - 'SubhaloID' (int): Identifier for the subhalo.
                 - 'stellarMass' (Quantity): Stellar mass with an astropy unit (preferably Msun).
                 - 'halfStellarMassRadius' (Quantity): Half-mass radius with an astropy unit (preferably kpc).
                 - 'velocity' (Quantity): Velocity with an astropy unit (preferably km/s).
+            
             Additional configuration parameters can also be included. These will override existing configuration settings.
         
         Raises
@@ -1764,6 +1779,8 @@ class PreProcess:
         FileNotFoundError
             If required particle files are not found in the working directory.
         """
+        
+        os.makedirs(self.workingDir, exist_ok=True)
         self.inputMethod = 'input'
         
         # in case changing configs
@@ -1834,6 +1851,9 @@ class PreProcess:
              direct input, subhalo files, or user-provided files.
           4. Saves processed particle data to HDF5 and creates a .ski configuration file.
         """
+        
+        os.makedirs(self.workingDir, exist_ok=True)
+        
         if arguments is not None:
             self.modify_configs(arguments) 
         

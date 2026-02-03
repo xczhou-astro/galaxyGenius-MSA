@@ -1,6 +1,5 @@
 import numpy as np
 from astropy.io import fits
-from astropy.convolution import convolve_fft
 import astropy.units as u
 import astropy.constants as const
 from astropy.cosmology import Cosmology
@@ -9,28 +8,22 @@ import os
 from skimage.transform import rescale, rotate, downscale_local_mean
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.transforms import Affine2D
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib_scalebar.scalebar import ScaleBar
 from matplotlib_scalebar.dimension import _Dimension
 import numba
-from .utils import read_config, galaxygenius_data_dir, setup_logging
-from .utils import get_wave_for_emission_line, Units, read_json, fage
+from numba.typed import Dict
+from numba import types
 from itertools import product
-from multiprocessing import shared_memory
-import multiprocessing as mp
 import time
 from typing import Union
-import h5py
-from scipy.stats import binned_statistic_2d
+import rocket_fft
 
-try:
-    if mp.get_start_method(allow_none=True) is None:
-        mp.set_start_method('spawn')
-except RuntimeError:
-    pass
+from .utils import read_config, galaxygenius_data_dir, setup_logging
+from .utils import get_wave_for_emission_line, read_json
+from .properties import *
 
 class ParsecDimension(_Dimension):
     def __init__(self):
@@ -42,15 +35,295 @@ class AngleDimension(_Dimension):
         super().__init__(r'${^{\prime\prime}}$')
         self.add_units(r'${^{\prime}}$', 60)
 
+
+@numba.njit(cache=True, fastmath=True)
+def _trapezoid_numba(y: np.ndarray, x: np.ndarray) -> np.float32:
+    
+    result = np.float32(0.0)
+    for i in range(1, len(x)):
+        dx = x[i] - x[i - 1]
+        result += (y[i - 1] + y[i]) * dx / np.float32(2.0)
+    return result
+
+@numba.njit(cache=True, fastmath=True)
+def _integrate_counts_numba(values: np.ndarray, wave_bins: np.ndarray, 
+                                aperture: np.float32, pixel_scale: np.float32,
+                                throughput_dict: Dict, count_constants: np.float32) -> np.float32:
+    
+    wavelength = throughput_dict['wavelengths']
+    throughput = throughput_dict['throughput']
+    
+    values = values / wave_bins**2
+    
+    thr = np.interp(wave_bins, wavelength, throughput)
+
+    const_factor = np.float32(np.pi) * (aperture / np.float32(2.0))**2 * pixel_scale**2
+    
+    count_rate = _trapezoid_numba(wave_bins * values * thr, wave_bins)
+    count_rate = count_rate * count_constants * const_factor
+    
+    return count_rate
+
+
+@numba.njit(cache=True, fastmath=True, parallel=True)
+def _count_rate_numba(wavelength: np.ndarray, spectrum: np.ndarray, waves_at_pixel: np.ndarray,
+                        throughput_dict: Dict, count_constants: np.float32, numSpecWaveBins: np.int32, 
+                        aperture: np.float32, pixel_scale: np.float32) -> np.ndarray:
+    
+    count_rates = np.zeros(len(waves_at_pixel) - 1, dtype=np.float32)
+    
+    for i in numba.prange(len(waves_at_pixel) - 1):
+        wave_begin = waves_at_pixel[i]
+        wave_end = waves_at_pixel[i + 1]
+    
+        wave_bins = np.linspace(wave_begin, wave_end, numSpecWaveBins).astype(np.float32)
+        
+        flux = np.interp(wave_bins, wavelength, spectrum)
+        count_rate = _integrate_counts_numba(
+            flux, wave_bins, aperture, pixel_scale, throughput_dict, count_constants
+        )
+        count_rates[i] = count_rate
+    
+    return count_rates
+
+@staticmethod
+@numba.njit(cache=True, fastmath=True, parallel=True)
+def _numba_convolve_fft_static(cube: np.ndarray, psf: np.ndarray) -> np.ndarray:
+    n_wave, h_img, w_img = cube.shape
+    _, h_ker, w_ker = psf.shape
+    
+    pad_h = h_img + h_ker - 1
+    pad_w = w_img + w_ker - 1
+    
+    start_y = (h_ker - 1) // 2
+    start_x = (w_ker - 1) // 2
+    
+    # Pre-allocate output to avoid memory fragmentation
+    output = np.empty((n_wave, h_img, w_img), dtype=cube.dtype)
+    
+    for i in numba.prange(n_wave):
+        # Perform 2D convolution for the single slice
+        img_slice = cube[i]
+        ker_slice = psf[i]
+        
+        sl_freq = np.fft.rfft2(img_slice, s=(pad_h, pad_w))
+        kf_freq = np.fft.rfft2(ker_slice, s=(pad_h, pad_w))
+        
+        res_full = np.fft.irfft2(sl_freq * kf_freq, s=(pad_h, pad_w))
+        
+        output[i] = res_full[start_y : start_y + h_img, start_x : start_x + w_img]
+        
+    return output
+
+@staticmethod
+@numba.njit(
+"float32[:, :](float32[:, :, :], float32[:], float32[:])", 
+parallel=True, cache=True, fastmath=True)
+def integrate_bandpass(img: np.ndarray, tran: np.ndarray, wave: np.ndarray) -> np.ndarray:
+    # not-used
+    n = len(wave)
+    h, w = img.shape[1], img.shape[2]
+    out = np.zeros((h, w), dtype=np.float32)
+    for i in numba.prange(h):
+        for j in range(w):
+            integral = np.float32(0.0)
+            for k in range(1, n):
+                y1 = img[k-1, i, j] * tran[k-1] * wave[k-1]
+                y2 = img[k, i, j] * tran[k] * wave[k]
+                dx = wave[k] - wave[k-1]
+                integral += (y1 + y2) / np.float32(2.0) * dx
+            out[i, j] = integral
+    return out
+
+@staticmethod
+@numba.njit(cache=True, fastmath=True, parallel=True)
+def _add_noise_numba(
+    counts: np.ndarray,
+    bkg_counts: np.ndarray,
+    dark_counts: np.ndarray,
+    readout: np.ndarray,
+    n_exposure: np.int32
+) -> tuple[np.ndarray, np.ndarray]:
+    
+    ideal_counts = counts.copy()
+    
+    mean_noise_counts = np.zeros_like(counts)
+    for i in numba.prange(len(counts)):
+        mean_noise_counts[i] = bkg_counts[i] + dark_counts[i]
+    
+    counts = counts + mean_noise_counts
+    
+    # Poisson noise
+    for i in numba.prange(len(counts)):
+        counts[i] = np.random.poisson(counts[i])
+    
+    # Read noise for each exposure
+    for exp in range(n_exposure):
+        for i in numba.prange(len(counts)):
+            read_noise = np.random.normal(np.float32(0.0), readout[i])
+            read_noise = np.round(read_noise)
+            counts[i] += read_noise
+    
+    counts = counts - mean_noise_counts
+    
+    # Calculate noise counts
+    noise_counts = np.zeros_like(counts)
+    for i in numba.prange(len(counts)):
+        noise_counts[i] = np.sqrt(
+            ideal_counts[i] + bkg_counts[i] + dark_counts[i] + n_exposure * readout[i]**2
+        )
+    
+    return counts, noise_counts
+
+@staticmethod
+@numba.njit(cache=True, fastmath=True, parallel=True)
+def _rebin_fluxes_and_noise_numba(
+    wavelengths_in: np.ndarray,
+    fluxes_in: np.ndarray,
+    noise_in_squared: np.ndarray,
+    sed_in: np.ndarray,
+    wavelengths_out: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    
+    # wavelengths_out is wave edges
+    fluxes_out = np.zeros(len(wavelengths_out) - 1, dtype=fluxes_in.dtype)
+    noise_out = np.zeros(len(wavelengths_out) - 1, dtype=noise_in_squared.dtype)
+    sed_out = np.zeros(len(wavelengths_out) - 1, dtype=sed_in.dtype)
+    
+    for i in numba.prange(len(wavelengths_out) - 1):
+        w_start = wavelengths_out[i]
+        w_end = wavelengths_out[i + 1]
+
+        idx_start = np.searchsorted(wavelengths_in, w_start, side='right') - 1
+        idx_end = np.searchsorted(wavelengths_in, w_end, side='left')
+        
+        idx_start = max(np.int32(0), idx_start)
+        idx_end = min(len(fluxes_in), idx_end)
+        
+        widths_in = w_end - w_start
+        
+        for j in range(idx_start, idx_end):
+            
+            p_start = wavelengths_in[j]
+            p_end = wavelengths_in[j + 1]
+            
+            overlap_start = max(w_start, p_start)
+            overlap_end = min(w_end, p_end)
+            overlap_width = overlap_end - overlap_start
+            
+            if overlap_width > np.float32(0.0):
+                frac = overlap_width / widths_in
+                fluxes_out[i] += fluxes_in[j] * frac
+                noise_out[i] += noise_in_squared[j] * frac
+                sed_out[i] += sed_in[j] * frac
+                
+    for i in numba.prange(len(noise_out)):
+        noise_out[i] = np.sqrt(noise_out[i])
+    
+    return fluxes_out, noise_out, sed_out
+
+@staticmethod
+@numba.njit(cache=True, fastmath=True, parallel=True)
+def _overlap_counts_numba(counts_array: np.ndarray,
+                            noise_counts_array: np.ndarray,
+                            sed_counts_array: np.ndarray,
+                            n_pixels_slitlet_parallel: np.int32) \
+                                -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+    
+    # counts_array: 40, 18, num_wave
+    num_pixels_on_detector = counts_array.shape[-1]
+    size_on_detector = num_pixels_on_detector + n_pixels_slitlet_parallel - 1
+    
+    # overlapped_counts_array: 40, 9, num_wave
+    overlapped_shape = (
+        counts_array.shape[0],
+        counts_array.shape[1] // n_pixels_slitlet_parallel,
+        counts_array.shape[-1]
+    )
+    
+    overlapped_counts_array = np.zeros((
+        overlapped_shape
+    ))
+    
+    overlapped_noise_counts_array = np.zeros((
+        overlapped_shape
+    ))
+    
+    overlapped_sed_counts_array = np.zeros((
+        overlapped_shape
+    ))
+    
+    offset = n_pixels_slitlet_parallel // 2
+    
+    for i in numba.prange(overlapped_shape[0]):
+        for j in range(overlapped_shape[1]):
+            
+            line = np.zeros((size_on_detector))
+            
+            for k in range(n_pixels_slitlet_parallel):
+                line[k: k + num_pixels_on_detector] += \
+                    counts_array[i, j * n_pixels_slitlet_parallel + k]
+                    
+            extracted_counts = line[offset:]
+            overlapped_counts_array[i, j] = extracted_counts
+            
+            noise = np.zeros((size_on_detector))
+            
+            for k in range(n_pixels_slitlet_parallel):
+                noise[k: k + num_pixels_on_detector] += \
+                    noise_counts_array[i, j * n_pixels_slitlet_parallel + k]**2
+                    
+            extracted_noise = np.sqrt(noise[offset:])
+            overlapped_noise_counts_array[i, j] = extracted_noise
+                    
+            sed = np.zeros((size_on_detector))
+            
+            for k in range(n_pixels_slitlet_parallel):
+                sed[k: k + num_pixels_on_detector] += \
+                    sed_counts_array[i, j * n_pixels_slitlet_parallel + k]
+                    
+            extracted_sed = sed[offset:]
+            overlapped_sed_counts_array[i, j] = extracted_sed
+            
+    return overlapped_counts_array, overlapped_noise_counts_array, overlapped_sed_counts_array
+
+
 class PostProcess:
     
     def __init__(self, subhaloID: int):
         
+        """
+        PostProcess class for handling post-processing of JWST MSA-3D simulation.
+        It loads the data cube and other relevant data, applying astrophysical and instrumental transformations,
+        and producing synthetic observables compatible with JWST/NIRSpec MSA observations. 
+        Finally, it saves the resulting MSA data tensor and other relevant files to the result directory.
+
+        Parameters
+        ----------
+        subhaloID : int
+            The identifier of the target subhalo to be post-processed.
+        """
+        
         self.subhaloID = subhaloID
         self.dataDir = galaxygenius_data_dir()
-        # self.save_path = f'MSA_mock/Subhalo_{self.subhaloID}'
-        # os.makedirs(self.save_path, exist_ok=True)
+        self.__init_count_constants()
         
+    def __init_count_constants(self):
+        
+        # dimension conversion without real values
+        
+        f_lam_unit = u.MJy / u.sr * const.c / u.angstrom**2
+        f_lam_unit = f_lam_unit.to(u.erg / u.s / u.cm**2 / u.angstrom / u.sr)
+        
+        # const_factor = np.pi * (u.m / 2)**2 * u.arcsec**2 / (const.h * const.c)
+        const_factor = u.m**2 * u.arcsec**2 / (const.h * const.c)
+        
+        count_constants = f_lam_unit * const_factor * u.angstrom**2
+        
+        count_constants = count_constants.to_value(u.s**-1)
+        
+        self.count_constants = count_constants
     
     def __init_paths(self):
 
@@ -141,7 +414,8 @@ class PostProcess:
         for i in range(self.config['nDithers']):
             self.n_exposure_array[i, :] = i
             self.n_exposure_array[-i - 1, :] = i
-            
+        
+        # 40, 9
         self.n_exposure_output = np.ones((
             self.n_pixels_perpendicular,
             self.n_pixels_output_parallel,
@@ -160,7 +434,6 @@ class PostProcess:
         # considered box length in pixels
         self.boxlength_in_pixel = int((self.config['displayBoxSize'] / self.config['pixelScale']).value)
         
-        
     def __init_data(self):
         
         dispersion = os.path.join(
@@ -173,6 +446,10 @@ class PostProcess:
             wavelengths = f[1].data['wavelength'] * 10**4
             dlds = f[1].data['dlds'] * 10**4
             resolutions = f[1].data['r']
+            
+            wavelengths = wavelengths.astype(np.float32)
+            dlds = dlds.astype(np.float32)
+            resolutions = resolutions.astype(np.float32)
             
         self.interp_dispersion = interp1d(
             wavelengths,
@@ -196,12 +473,23 @@ class PostProcess:
             wavelengths = f[1].data['wavelength'] * 10**4
             throughputs = f[1].data['throughput']
             
+            wavelengths = wavelengths.astype(np.float32)
+            throughputs = throughputs.astype(np.float32)
+        
+        self.throughput_dict = Dict.empty(
+            key_type=types.unicode_type,
+            value_type=types.float32[:]
+        )
+        
+        # numba compatible dict
+        self.throughput_dict['wavelengths'] = wavelengths
+        self.throughput_dict['throughput'] = throughputs
+        
         self.interp_throughput = interp1d(
             wavelengths,
             throughputs,
             kind='linear'
         )
-        
         
     def input_bkg_interp(self, interp_bkg: interp1d):
         
@@ -236,11 +524,6 @@ class PostProcess:
         self.input_psf_called = True
         self.input_psf_cube = psf_cube
         
-    def input_wavelengths(self, wavelengths: np.ndarray):
-        # for debug
-        self.input_wavelengths_called = True
-        self.input_waves = wavelengths
-        
     def input_dataCube(self, dataCube_path: str, 
                        viewing_angle: Union[tuple[float, float], list[float, float], None]=None):
         
@@ -257,7 +540,7 @@ class PostProcess:
             The file path to the data cube (output by SKIRT, in .fits format) to be loaded.
         viewing_angle : tuple[float, float] | list[float, float] | None, optional
             The inclination (in degree) and azimuth (in degree) viewing angles to be associated with this data cube.
-            If None, the angles will be extracted from the filename and config.
+            If None, the angles will be extracted from the dataCube_path.
         """
         
         self.dataCubeDir = os.path.dirname(dataCube_path)
@@ -285,11 +568,7 @@ class PostProcess:
         with fits.open(dataCube_path) as f:
 
             self.dataCube = f[0].data
-            
-            if hasattr(self, 'input_wavelengths_called') and self.input_wavelengths_called:
-                self.wavelengths = self.input_waves
-            else:
-                self.wavelengths = f[1].data['grid_points'] * 10**4 # in angstrom
+            self.wavelengths = f[1].data['grid_points'] * 10**4 # in angstrom
         
         # slightly extend to avoid error on interp
         begin_wave = self.begin_wave - 20
@@ -299,7 +578,9 @@ class PostProcess:
         
         self.wavelengths = self.wavelengths[idx]
         
+        self.dataCube = self.dataCube.astype(np.float32)
         self.dataCube = self.dataCube[idx]
+        
         
     def input_subhalo_info(self, subhalo_info: dict):
         
@@ -318,7 +599,7 @@ class PostProcess:
 
     def __save_PSF_cube(self, psf_cube: np.ndarray, savefilename: str):
         
-        
+    
         hdulist = fits.HDUList()
         primary_hdu = fits.PrimaryHDU(data=psf_cube)
         header = primary_hdu.header
@@ -366,6 +647,7 @@ class PostProcess:
         
         # rescale to match pixel scale with cube
         psf_array = rescale(psf_array, (ratio, ratio))
+        psf_array = psf_array.astype(np.float32)
         
         return psf_array
 
@@ -377,36 +659,16 @@ class PostProcess:
         psf_cube = nrs.calc_datacube_fast(waves, oversample=self.config['oversample'])
         psf_cube = psf_cube[0].data
         
+        psf_cube = psf_cube.astype(np.float32)
+        
         return psf_cube
     
     def _check_size(self):
-        
-        """
-        Check the size of the input PSF cube.
-
-        This method verifies that the input PSF cube has the same number of wavelengths as the data cube.
-        """
         
         assert len(self.input_psf_cube) == len(self.wavelengths), \
             f'PSF cube and wavelengths size do not match, {len(self.input_psf_cube)} vs. {len(self.wavelengths)}'
             
     def _check_existing_psf(self, wavelengths: np.ndarray, oversample: int):
-        
-        """
-        Check if an existing PSF cube matches the required wavelengths and oversample.
-
-        Parameters
-        ----------
-        wavelengths : np.ndarray
-            The array of wavelengths from the existing PSF cube.
-        oversample : int
-            The oversample factor from the existing PSF cube.
-
-        Returns
-        -------
-        bool
-            True if the PSF cube matches the current configuration (wavelengths and oversample); False otherwise.
-        """
         
         cond_1 = len(wavelengths) == len(self.wavelengths)
         cond_2 = np.allclose(wavelengths, self.wavelengths)
@@ -419,25 +681,11 @@ class PostProcess:
     
     def _get_PSF_cube(self) -> np.ndarray:
         
-        """
-        Retrieve the PSF (Point Spread Function) cube.
-
-        This method attempts to provide the PSF cube necessary for convolution or observation simulation.
-        It checks, in order:
-            1. If an input PSF cube was explicitly provided via input_psf (and validated).
-            2. If a cached PSF cube matching the current configuration.
-            3. Otherwise, generates a new PSF cube via the STPSF tool and saves it to the cache directory.
-
-        Returns
-        -------
-        np.ndarray
-            The PSF cube as a NumPy array matching the current wavelength grid and oversample.
-        """
-        
         if hasattr(self, 'input_psf_called') and self.input_psf_called:
             self._check_size()
             self.logger.info('Use input PSF cube.')
-            return self.input_psf_cube
+            self.psf_cube = self.input_psf_cube.astype(np.float32)
+            return
         
         psf_cube_path = os.path.join(self.cache_path, 'psf_cube.fits')
         if os.path.exists(psf_cube_path):
@@ -457,7 +705,8 @@ class PostProcess:
             psf_cube = self.__psf_from_stpsf()
             self.__save_PSF_cube(psf_cube, psf_cube_path)
         
-        return psf_cube
+        psf_cube = psf_cube.astype(np.float32)
+        self.psf_cube = psf_cube
     
     def _get_PSF_bandpass(self) -> np.ndarray:
         # un-used, bandpass image is not used
@@ -475,383 +724,99 @@ class PostProcess:
             psf_bandpass = self.__psf_bandpass_from_stpsf()
             self.__save_PSF_bandpass(psf_bandpass, psf_bandpass_path)
             
-        return psf_bandpass
+        self.psf_bandpass = psf_bandpass
     
-    @staticmethod
-    def _shift_image_static(img: np.ndarray, dy: int, dx: int) -> np.ndarray:
+    
+    def _shift_cube(self, cube: np.ndarray, dy: int, dx: int) -> np.ndarray:
         
-        """
-        Shift an image by a given number of pixels in the y and x directions.
-
-        Parameters
-        ----------
-        img : np.ndarray
-            The image array to be shifted.
-        dy : int
-            The number of pixels to shift in the y direction.
-        dx : int
-            The number of pixels to shift in the x direction.
-
-        Returns
-        -------
-        np.ndarray
-            The shifted image array.
-        """
+        h, w = cube.shape[1:]
+        result = np.zeros_like(cube) # 3d array
         
-        h, w = img.shape[:2]
-        result = np.zeros_like(img)
-
         y1 = max(0, dy)
         y2 = h + min(0, dy)
         x1 = max(0, dx)
         x2 = w + min(0, dx)
-
-        result[y1:y2, x1:x2] = img[y1 - dy:y2 - dy, x1 - dx:x2 - dx]
+        
+        result[:, y1:y2, x1:x2] = cube[:, y1 - dy:y2 - dy, x1 - dx:x2 - dx]
         return result
-    
-    @staticmethod
-    def _transform_slice_static(
-        cube_slice: np.ndarray, info_dict: dict) -> np.ndarray:
-        """
-        Transform a spatial slice of the data cube.
 
-        Parameters
-        ----------
-        cube_slice : np.ndarray
-            The spatial slice of the data cube to be transformed.
-        info_dict : dict
-            A dictionary containing information about the transformation.
+    def _rotate_cube(self, cube: np.ndarray, angle: float) -> np.ndarray:
         
-        Returns
-        -------
-        np.ndarray
-            The transformed spatial slice of the data cube.
-        """
-        n_pixels_perpendicular = info_dict['n_pixels_perpendicular']
-        n_pixels_parallel = info_dict['n_pixels_parallel']
-        rotation_angle = info_dict['rotation_angle']
-        shift_perpendicular = info_dict['shift_perpendicular']
-        shift_parallel = info_dict['shift_parallel']
-        rescale_ratio_perpendicular = info_dict['rescale_ratio_perpendicular']
-        rescale_ratio_parallel = info_dict['rescale_ratio_parallel']
-        
-        # make same odd or even
-        if n_pixels_perpendicular % 2 != 0:
-            if cube_slice.shape[0] % 2 == 0:
-                cube_slice = cube_slice[:-1, :] # to odd
-        else:
-            if cube_slice.shape[0] % 2 != 0:
-                cube_slice = cube_slice[:-1, :] # to even
-            
-        if n_pixels_parallel % 2 != 0:
-            if cube_slice.shape[1] % 2 == 0:
-                cube_slice = cube_slice[:, :-1] # to odd
-        else:    
-            if cube_slice.shape[1] % 2 != 0:
-                cube_slice = cube_slice[:, :-1] # to even
-                
-        if rotation_angle != 0:
-            try:
-                
-                cube_slice = rotate(
-                    cube_slice, 
-                    -rotation_angle,
-                    resize=True,
-                    mode='constant',
-                    cval=0,
-                )
-            except:
-                cube_slice = cube_slice.astype(cube_slice.dtype.newbyteorder('='))
-                cube_slice = rotate(
-                    cube_slice, 
-                    -rotation_angle,
-                    resize=True,
-                    mode='constant',
-                    cval=0,
-                )
-                
-        if shift_perpendicular != 0 or shift_parallel != 0:
-            cube_slice = PostProcess._shift_image_static(
-                cube_slice, 
-                -shift_perpendicular,
-                -shift_parallel
+        # We rotate each slice (cube[z, :, :]) in xy spatial plane by the given angle
+        rotated_cube = np.empty_like(cube)
+        for i in range(cube.shape[0]):
+            rotated_cube[i] = rotate(
+                cube[i], 
+                angle, 
+                resize=False, 
+                mode='constant', 
+                cval=np.nan, 
+                preserve_range=True
             )
+        return rotated_cube
+        
+    def _transform_cube(self, cube: np.ndarray) -> np.ndarray:
+        
+        # match the shape of the cube to the number of pixels
+        if self.n_pixels_perpendicular % 2 != 0:
+            if cube.shape[1] % 2 == 0:
+                cube = cube[:, :-1, :] # to odd
+        else:
+            if cube.shape[1] % 2 != 0:
+                cube = cube[:, :-1, :] # to even
             
-        cube_slice = rescale(
-            cube_slice,
-            (rescale_ratio_perpendicular, rescale_ratio_parallel), # y, x
+        if self.n_pixels_parallel % 2 != 0:
+            if cube.shape[2] % 2 == 0:
+                cube = cube[:, :, :-1] # to odd
+        else:    
+            if cube.shape[2] % 2 != 0:
+                cube = cube[:, :, :-1] # to even
+        
+        # rotate
+        angle = self.config['rotate'].to_value(u.deg)
+        if angle != 0:
+            cube = cube.astype(cube.dtype.newbyteorder('='))
+            cube = self._rotate_cube(cube, angle)
+            
+        # shift
+        if self.shift_perpendicular != 0 or self.shift_parallel != 0:
+            cube = self._shift_cube(cube, self.shift_perpendicular, self.shift_parallel)
+        
+        # rescale
+        cube = rescale(
+            cube, 
+            (1, self.rescale_ratio_perpendicular, self.rescale_ratio_parallel),
             anti_aliasing=True,
         )
-        
-        return cube_slice
+            
+        return cube
     
-    @staticmethod
-    def _process_single_spatial_slice_static(args):
+    def _process_spatial_dimension(self) -> np.ndarray:
         
-        """
-        Static method used for multiprocessing: processes a single spatial slice of the data cube.
-
-        This method is designed to be called in parallel on multiple processes. It retrieves a data cube slice
-        and the corresponding PSF slice from shared memory, applies the PSF convolution, downsamples and pads the slice,
-        and performs geometric transformations (e.g., rotation, shift, rescale) specified by the info_dict.
-
-        Parameters
-        ----------
-        args : tuple
-            Contains all parameters required for processing:
-                - i: The index of the spatial (wavelength) slice to process.
-                - shm_cube_name: Name of the shared memory block for the data cube.
-                - cube_shape: Shape of the data cube array.
-                - cube_dtype: Data type of the data cube.
-                - shm_psf_name: Name of the shared memory block for the PSF cube.
-                - psf_shape: Shape of the PSF cube array.
-                - psf_dtype: Data type of the PSF cube.
-                - info_dict: Dictionary containing processing information, including oversample, 
-                             n_pixels_perpendicular, n_pixels_parallel, and geometric transformation info.
-
-        Returns
-        -------
-        np.ndarray
-            The processed spatial slice cropped to the target size (n_pixels_perpendicular, n_pixels_parallel).
-        """
-        
-        (i,
-         shm_cube_name, cube_shape, cube_dtype,
-         shm_psf_name, psf_shape, psf_dtype, 
-         info_dict
-         ) = args
-        
-        shm_cube = shared_memory.SharedMemory(name=shm_cube_name)
-        cube_array = np.ndarray(cube_shape, dtype=cube_dtype, buffer=shm_cube.buf)
-        
-        shm_psf = shared_memory.SharedMemory(name=shm_psf_name)
-        psf_array = np.ndarray(psf_shape, dtype=psf_dtype, buffer=shm_psf.buf)
-        
-        cube_slice = cube_array[i]
-        psf_slice = psf_array[i]
-    
-        cube_slice = PostProcess._apply_PSF_slice_static(cube_slice, psf_slice, info_dict['num_threads'])
-        cube_slice = PostProcess._downsample_static(cube_slice, info_dict['oversample'])
-        cube_slice = PostProcess._padding_static(cube_slice, (100, 100))
-        
-        cube_slice = PostProcess._transform_slice_static(
-            cube_slice, info_dict
+        cube = _numba_convolve_fft_static(
+            self.dataCube, self.psf_cube
         )
+        cube = self._downsample_static(cube, self.config['oversample'])
         
-        n_pixels_perpendicular = info_dict['n_pixels_perpendicular']
-        n_pixels_parallel = info_dict['n_pixels_parallel']
+        cube = self._padding_cube(cube, (None, 100, 100))
+        cube = self._transform_cube(cube)
         
-        slice_center_idx_perpendicular = cube_slice.shape[0] // 2
-        slice_center_idx_parallel = cube_slice.shape[1] // 2
+        slice_center_idx_perpendicular = cube.shape[1] // 2
+        slice_center_idx_parallel = cube.shape[2] // 2
         
         slice_perpendicular = slice(
-            slice_center_idx_perpendicular - n_pixels_perpendicular // 2,
-            slice_center_idx_perpendicular + n_pixels_perpendicular // 2
+            slice_center_idx_perpendicular - self.n_pixels_perpendicular // 2,
+            slice_center_idx_perpendicular + self.n_pixels_perpendicular // 2
         )
         
         slice_parallel = slice(
-            slice_center_idx_parallel - n_pixels_parallel // 2,
-            slice_center_idx_parallel + n_pixels_parallel // 2
+            slice_center_idx_parallel - self.n_pixels_parallel // 2,
+            slice_center_idx_parallel + self.n_pixels_parallel // 2
         )
-        container = cube_slice[slice_perpendicular, slice_parallel]
-        return container
-    
-    @staticmethod
-    @numba.njit(cache=True, fastmath=True)
-    def _trapezoid_numba(y: np.ndarray, x: np.ndarray):
         
-        """
-        Implementation of the trapezoidal integration using Numba.
-
-        Parameters
-        ----------
-        y : np.ndarray
-            The values to be integrated.
-        x : np.ndarray
-            The sample points corresponding to the y values.
-
-        Returns
-        -------
-        float
-            The result of the trapezoidal integration.
-        """
-        
-        result = 0.0
-        for i in range(1, len(x)):
-            dx = x[i] - x[i - 1]
-            result += (y[i - 1] + y[i]) * dx / 2.0
-        return result
-    
-    def _integrate_counts(self, values: np.ndarray, wave_bins: np.ndarray) -> u.Quantity:
-        
-        """
-        Integrate the photon count rate over a specified wavelength bin.
-
-        This method computes the number of detected electrons per second (count rate) 
-        for a wavelength bin defined by `wave_bins` using the trapezoidal rule. 
-        It converts the input surface brightness (in MJy/sr) to specific flux per unit wavelength 
-        (in physical units), applies system throughput, then performs the integral:
-
-            count_rate ∝ ∫ λ * Fλ * T(λ) dλ
-
-        where Fλ is the spectral flux density per unit wavelength (converted to 
-        erg/cm²/s/Å/sr), T(λ) is the system throughput, and λ is in Å.
-
-        Returns
-        -------
-        astropy.units.Quantity
-            Integrated photon count rate (in 1/s) for the wavelength bin.
-        """
-        
-        # A_aper * l_p^2 / (h * c) * int_wavemin^wave_max lambda * flux * throughput * dlambda
-        
-        f_lam = values * u.MJy / u.sr * const.c / (wave_bins * u.angstrom)**2
-        f_lam = f_lam.to(u.erg / u.cm**2 / u.s / u.angstrom / u.sr)
-        f_lam_unit = f_lam.unit
-        f_lam_val = f_lam.value
-        
-        throughput = self.interp_throughput(wave_bins)
-        
-        const_factor = np.pi * (self.config['aperture'] / 2)**2 * self.config['pixelScale']**2 / (const.h * const.c)
-        # without t_exp and N_exp
-        count_rate_value = self._trapezoid_numba(wave_bins * f_lam_val * throughput, wave_bins)
-        count_rate = count_rate_value * const_factor * f_lam_unit * u.angstrom**2
-        count_rate = count_rate.to(u.s**-1)
-        return count_rate
-    
-    @staticmethod
-    def _integrate_counts_static(values: np.ndarray, wave_bins: np.ndarray, 
-                                 interp_throughput: interp1d,
-                                 aperture: u.Quantity, pixel_scale: u.Quantity) -> u.Quantity:
-        
-        """
-        Static method to perform the integration of photon counts over a given wavelength bin using the trapezoidal rule.
-
-        Parameters
-        ----------
-        values : np.ndarray
-            The flux values to be integrated, in MJy/sr.
-        wave_bins : np.ndarray
-            The wavelength bin edges in Angstroms.
-        interp_throughput : scipy.interpolate.interp1d
-            Interpolator for the system throughput as a function of wavelength.
-        aperture : astropy.units.Quantity
-            The aperture diameter (with units compatible with cm or m).
-        pixel_scale : astropy.units.Quantity
-            The pixel scale (with units compatible with arcsec or other length).
-
-        Returns
-        -------
-        astropy.units.Quantity
-            The integrated photon count rate in units of 1/s (per pixel).
-        """
-        
-        # A_aper * l_p^2 / (h * c) * int_wavemin^wave_max lambda * flux * throughput * dlambda
-        
-        f_lam = values * u.MJy / u.sr * const.c / (wave_bins * u.angstrom)**2
-        f_lam = f_lam.to(u.erg / u.cm**2 / u.s / u.angstrom / u.sr)
-        f_lam_unit = f_lam.unit
-        f_lam_val = f_lam.value
-        
-        throughput = interp_throughput(wave_bins)
-        
-        const_factor = np.pi * (aperture / 2)**2 * pixel_scale**2 / (const.h * const.c)
-        # without t_exp and N_exp
-        count_rate_value = PostProcess._trapezoid_numba(wave_bins * f_lam_val * throughput, wave_bins)
-        count_rate = count_rate_value * const_factor * f_lam_unit * u.angstrom**2
-        count_rate = count_rate.to(u.s**-1)
-        return count_rate
-    
-    @staticmethod
-    @numba.njit(
-    "float32[:, :](float32[:, :, :], float32[:], float32[:])", 
-    parallel=True, cache=True, fastmath=True)
-    def integrate_bandpass(img, tran, wave):
-        # not-used
-        n = len(wave)
-        h, w = img.shape[1], img.shape[2]
-        out = np.zeros((h, w), dtype=np.float32)
-        for i in numba.prange(h):
-            for j in range(w):
-                integral = 0.0
-                for k in range(1, n):
-                    y1 = img[k-1, i, j] * tran[k-1] * wave[k-1]
-                    y2 = img[k, i, j] * tran[k] * wave[k]
-                    dx = wave[k] - wave[k-1]
-                    integral += (y1 + y2) / 2.0 * dx
-                out[i, j] = integral
-        return out
-    
-    # def _get_bandpass_image(self, wavelengths: np.ndarray, dataCube: np.ndarray, 
-    #                         psf_bandpass: Union[np.ndarray, None]=None):
-        
-    #     filter = self.config['displayBackgroundFilter']
-    #     throughput_file = os.path.join(self.dataDir, 'filters/JWST', f'{filter}.fil')
-    #     if not os.path.exists(throughput_file):
-    #         raise FileNotFoundError(f'{throughput_file} not found.')
-    
-    #     throughput = np.loadtxt(throughput_file)
-    #     with open(throughput_file, 'r') as f:
-    #         header = f.readline()
-    #     if 'micron' in header or 'um' in header:
-    #         throughput[:, 0] = throughput[:, 0] * 10**4 # in angstrom
-    #     elif 'angstrom' in header:
-    #         pass
-    #     interp_bandpass_throughput = interp1d(
-    #         throughput[:, 0], throughput[:, 1], kind='linear'
-    #     )
-    #     min_wave = np.min(throughput[:, 0])
-    #     max_wave = np.max(throughput[:, 0])
-    #     idx = np.where((wavelengths >= min_wave) & (wavelengths <= max_wave))[0]
-        
-    #     data_in = dataCube[idx] * u.MJy / u.sr
-    #     wave_in = wavelengths[idx]
-    #     trans_in = interp_bandpass_throughput(wave_in)
-        
-    #     f_lam = (data_in * const.c / (wave_in.reshape(-1, 1, 1) * u.angstrom)**2)
-    #     f_lam = f_lam.to(u.erg / u.cm**2 / u.s / u.angstrom / u.sr)
-    #     f_lam_unit = f_lam.unit
-        
-    #     exposureTime = self.config['exposureTime']
-    #     numExp = 1
-    #     areaMirror = np.pi * (self.config['aperture'] / 2)**2
-        
-    #     const_factor = exposureTime * numExp * areaMirror / (const.h * const.c)
-    #     integral = self.integrate_bandpass(f_lam.value, trans_in, wave_in) * f_lam_unit * u.angstrom**2
-    #     image_in_count = const_factor * integral * (self.config['pixelScale'] / self.config['oversample'])**2
-    #     image_in_count = image_in_count.value
-        
-    #     pivot_numerator = self._trapezoid_numba(trans_in, wave_in) * u.angstrom
-    #     pivot_denominator = self._trapezoid_numba(trans_in * wave_in ** -2, wave_in) * u.angstrom**-1
-    #     pivot = np.sqrt(pivot_numerator / pivot_denominator)
-        
-    #     Jy_converter = self._trapezoid_numba(trans_in * wave_in, wave_in) * u.angstrom**2
-    #     Jy_converter = Jy_converter / (const.h * const.c) * areaMirror\
-    #                     * numExp * exposureTime
-    #     Jy_converter = pivot**2 / const.c / Jy_converter
-    #     Jy_converter = Jy_converter.to(u.Jy)
-        
-    #     if psf_bandpass is not None:
-    #         psf_bandpass = psf_bandpass / np.sum(psf_bandpass)
-    #         bandpass_image = convolve_fft(image_in_count, psf_bandpass)
-    
+        return cube[:, slice_perpendicular, slice_parallel]
 
     def _get_waves_by_resolution(self):
-        
-        """
-        Generate an array of wavelengths corresponding to the instrument's spectral resolution.
-
-        Returns
-        -------
-        np.ndarray
-            Array of wavelength bin edges according to instrumental resolution, 
-            spanning from self.begin_wave to self.end_wave. Each bin width is computed as
-            delta_lambda = wavelength / resolution(wavelength), producing variable-width bins.
-
-        Notes
-        -----
-        Used to bin spectra according to the spectral resolution as a function of wavelength.
-        """
         
         # get waves corresponding to the resolution (output wavelengths for spectra)
         
@@ -873,20 +838,13 @@ class PostProcess:
             
             begin_wave = end_wave_resol
         
-        waves_corresponding_to_resolution = np.array(waves_corresponding_to_resolution)
-        return waves_corresponding_to_resolution
+        waves_corresponding_to_resolution = np.array(waves_corresponding_to_resolution, 
+                                                     dtype=np.float32)
+        
+        self.waves_by_resolution = waves_corresponding_to_resolution
+        self.logger.info(f'Number of wavelengths by resolution: {len(self.waves_by_resolution) - 1}')
         
     def _get_waves_at_pixel(self):
-        
-        """
-        Generate an array of wavelength bin edges corresponding to the detector pixels along the dispersion direction.
-
-        Returns
-        -------
-        np.ndarray
-            Array of wavelength bin edges in Angstroms, where each bin width is determined by the pixel dispersion
-            at that wavelength according to the instrument configuration.
-        """
         
         waves_at_pixel = []
 
@@ -906,108 +864,13 @@ class PostProcess:
             
             begin_wave = end_wave_pixel
 
-        waves_at_pixel = np.array(waves_at_pixel)
-        return waves_at_pixel
-    
-    def _get_count_rates(self, wavelengths: np.ndarray, 
-                         interp: interp1d) -> u.Quantity:
+        waves_at_pixel = np.array(waves_at_pixel, dtype=np.float32)
         
-        """
-        Compute the count rates (in electrons per second) for each wavelength bin, 
-        using the given flux interpolator.
-
-        For each wavelength bin defined by `wavelengths`, the method evaluates the 
-        input interpolator (`interp`) over a set of wavelength samples within the bin, 
-        then integrates to obtain the corresponding count rate using the detector and 
-        instrument characteristics defined in `self`.
-
-        Parameters
-        ----------
-        wavelengths : np.ndarray
-            Array of wavelength bin edges in Angstroms. Each count rate will correspond 
-            to a bin [wavelengths[i], wavelengths[i+1]].
-        interp : scipy.interpolate.interp1d
-            Interpolator function returning flux (in MJy/sr) for arbitrary wavelengths.
-
-        Returns
-        -------
-        astropy.units.Quantity
-            Array of count rates (electrons/s) for each bin. Units are 1/s.
-        """
-        
-        count_rates = []
-        for begin, end in zip(wavelengths[:-1], wavelengths[1:]):
-            
-            wave_rebins = np.linspace(begin, end, num=self.config['numSpecWaveBins'])
-            
-            flux = interp(wave_rebins)
-            
-            count_rate = self._integrate_counts(flux, wave_rebins)
-            count_rates.append(count_rate)
-            
-        count_rates = u.Quantity(count_rates)
-        return count_rates
-    
-    @staticmethod
-    def _apply_PSF_slice_static(cube_slice: np.ndarray, psf_slice: np.ndarray, 
-                                num_threads: int) -> np.ndarray:
-        
-        """
-        Apply a PSF (Point Spread Function) convolution to a 2D spatial slice of the data cube (static method).
-        If FFTW is available, use FFTW for faster convolution, otherwise use built-in convolution.
-
-        Parameters
-        ----------
-        cube_slice : np.ndarray
-            2D array representing a single spatial slice of the data cube.
-        psf_slice : np.ndarray
-            2D PSF kernel to convolve with the data. Does not need to have odd dimensions.
-        num_threads : int
-            Number of threads to use for the convolution.
-
-        Returns
-        -------
-        np.ndarray
-            The result of the 2D convolution (same shape as the input slice).
-        """
-        
-        psf_slice = psf_slice / np.sum(psf_slice)
-        
-        try:
-            import pyfftw
-            from pyfftw.interfaces.numpy_fft import fftn, ifftn
-            
-            pyfftw.interfaces.cache.enable()
-            pyfftw.config.NUM_THREADS = num_threads
-            HAS_FFTW = True
-        except:
-            HAS_FFTW = False
-            
-        if HAS_FFTW:
-            cube_slice = convolve_fft(cube_slice, psf_slice, fftn=fftn, ifftn=ifftn)
-        else:
-            cube_slice = convolve_fft(cube_slice, psf_slice)
-        return cube_slice
+        self.waves_at_pixel = waves_at_pixel
+        self.logger.info(f'Number of wavelengths by pixel: {len(self.waves_at_pixel) - 1}')
     
     def _get_jwst_background(self, background_path: str):
-        """
-        Retrieve and interpolate the JWST background emission spectrum for the target coordinates.
 
-        This method downloads or loads the background emission data (in MJy/sr vs. wavelength) 
-        from the JWST Background Tool (JBT) for the RA, Dec, threshold, and thisday specified in self.config. 
-        The background data is saved to a file at background_path and also loaded into 
-        self.interp_bkg as an interpolator (wavelength in angstrom).
-
-        Parameters
-        ----------
-        background_path : str
-            The path where the background data file will be saved or loaded from.
-
-        Raises
-        ------
-        ValueError
-            If there is a problem downloading or parsing the background file via JBT.
-        """
         try:
         
             from jwst_backgrounds import jbt
@@ -1026,27 +889,16 @@ class PostProcess:
             wavelength = bkg[:, 0] * 10**4 # in angstrom
             flux = bkg[:, 1] # in MJy/sr
             
+            wavelength = wavelength.astype(np.float32)
+            flux = flux.astype(np.float32)
+            
             self.interp_bkg = interp1d(
                 wavelength, flux, kind='linear'
             )
         except Exception as e:
             raise ValueError(f'Error getting background emission file from JWST Background Tool (JBT): {e}')
     
-    def _calc_bkg(self, wavelengths: np.ndarray) -> np.ndarray:
-        """
-        Calculate the background count rates for the given array of wavelengths.
-
-        Parameters
-        ----------
-        wavelengths : np.ndarray
-            Array of wavelengths (in Angstrom).
-
-        Returns
-        -------
-        np.ndarray
-            Array of background count rates corresponding to input wavelengths.
-        """
-        bkg_count_rates = []
+    def _get_bkg(self):
         
         if self.config['useJBT']:
             
@@ -1061,6 +913,10 @@ class PostProcess:
                 bkg = np.loadtxt(background_path)
                 wavelength = bkg[:, 0] * 10**4 # in angstrom
                 flux = bkg[:, 1]
+                
+                wavelength = wavelength.astype(np.float32)
+                flux = flux.astype(np.float32)
+                
                 self.interp_bkg = interp1d(
                     wavelength, flux, kind='linear'
                 )
@@ -1074,203 +930,25 @@ class PostProcess:
                 pass
             else:
                 raise ValueError('Please call PostProcess.input_bkg() to provide a background interpolation.')
-        
-        bkg_count_rates = self._get_count_rates(wavelengths, self.interp_bkg)
-        return bkg_count_rates
     
     @staticmethod
-    @numba.njit(cache=True, fastmath=True, parallel=True)
-    def _add_noise_numba(
-        counts: np.ndarray,
-        bkg_counts: np.ndarray,
-        dark_counts: np.ndarray,
-        read_out_noise: float,
-        n_exposure: int
-    ):
-        
-        """
-        Add noise to simulated spectral data using Numba.
-
-        Applies Poisson noise (from source + background + dark current) and Gaussian read-out noise
-        to simulate detector noise over multiple exposures.
-
-        Parameters
-        ----------
-        counts : np.ndarray
-            Array of source counts per pixel.
-        bkg_counts : np.ndarray
-            Array of background counts per pixel.
-        dark_counts : np.ndarray
-            Array of dark current counts per pixel.
-        read_out_noise : float
-            Standard deviation of the read-out (Gaussian) noise per exposure.
-        n_exposure : int
-            Number of exposures.
-
-        Returns
-        -------
-        tuple of (np.ndarray, np.ndarray)
-            Tuple containing:
-                - counts with noise applied (np.ndarray)
-                - estimated noise standard deviation for each pixel (np.ndarray)
-        """
-        
-        ideal_counts = counts.copy()
-        
-        mean_noise_counts = np.zeros_like(counts)
-        for i in numba.prange(len(counts)):
-            mean_noise_counts[i] = bkg_counts[i] + dark_counts[i]
-        
-        # Poisson noise
-        for i in numba.prange(len(counts)):
-            counts[i] = np.random.poisson(counts[i])
-        
-        counts = counts + mean_noise_counts
-        
-        # Read noise for each exposure
-        for exp in range(n_exposure):
-            for i in numba.prange(len(counts)):
-                read_noise = np.random.normal(0.0, read_out_noise)
-                read_noise = np.round(read_noise)
-                counts[i] += read_noise
-        
-        counts = counts - mean_noise_counts
-        
-        # Calculate noise counts
-        noise_counts = np.zeros_like(counts)
-        for i in numba.prange(len(counts)):
-            noise_counts[i] = np.sqrt(
-                ideal_counts[i] + bkg_counts[i] + dark_counts[i] + n_exposure * read_out_noise**2
-            )
-        
-        return counts, noise_counts
-    
-    @staticmethod
-    def _add_noise_static(spectrum_count_rates: u.Quantity, bkg_count_rates: u.Quantity,
-                          n_exposure: int, exposure_time: u.Quantity,
-                          dark_current: u.Quantity, read_out: float) -> tuple[np.ndarray, np.ndarray]:
-        
-        """
-        Add noise to a spectrum given count rates, background, and detector parameters.
-
-        This static method computes the total counts (including source, background, and dark current),
-        applies Poisson (shot) noise and additive Gaussian read-out noise for each exposure, then
-        returns the noisy counts along with an estimation of the noise for each pixel.
-
-        Parameters
-        ----------
-        spectrum_count_rates : u.Quantity
-            The signal count rates from the spectrum, with unit electrons/s.
-        bkg_count_rates : u.Quantity
-            The background count rates, with unit electrons/s.
-        n_exposure : int
-            Number of exposures.
-        exposure_time : u.Quantity
-            Duration of a single exposure, with unit seconds.
-        dark_current : u.Quantity
-            Dark current rate, with unit electrons/s.
-        read_out : float
-            Standard deviation of read-out (Gaussian) noise per exposure, typically in electrons.
-
-        Returns
-        -------
-        tuple of (np.ndarray, np.ndarray)
-            Tuple containing:
-                - counts with noise applied (np.ndarray)
-                - estimated noise standard deviation for each pixel (np.ndarray)
-        """
+    def _add_noise_static(spectrum_count_rates: np.ndarray, bkg_count_rates: np.ndarray,
+                          n_exposure: np.int32, exposure_time: np.float32,
+                          dark_current: np.float32, read_out: np.float32) -> tuple[np.ndarray, np.ndarray]:
         
         counts = spectrum_count_rates * n_exposure * exposure_time
         bkg_counts = bkg_count_rates * n_exposure * exposure_time
         dark_counts = dark_current * n_exposure * exposure_time
         
-        dark_counts = np.full(bkg_counts.shape, 
-                              dark_counts.value) * dark_counts.unit
+        dark_counts = np.full(counts.shape, dark_counts)
+        readout = np.full(counts.shape, read_out)
         
-        counts_val = counts.value
-        bkg_counts_val = bkg_counts.value
-        dark_counts_val = dark_counts.value
-        readout_val = read_out
-        
-        counts_val, noise_counts_val = PostProcess._add_noise_numba(
-            counts_val, bkg_counts_val, dark_counts_val,
-            readout_val, n_exposure
+        counts_val, noise_counts_val = _add_noise_numba(
+            counts, bkg_counts, dark_counts,
+            readout, n_exposure
         )
         
         return counts_val, noise_counts_val
-    
-    @staticmethod
-    @numba.njit(cache=True, fastmath=True, parallel=True)
-    def _rebin_fluxes_and_noise_numba(
-        wavelengths_in: np.ndarray,
-        fluxes_in: np.ndarray,
-        noise_in_squared: np.ndarray,
-        sed_in: np.ndarray,
-        wavelengths_out: np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        
-        """
-        Rebin flux and noise arrays (in quadrature) from the input wavelength bins to the output wavelength bins.
-
-        Parameters
-        ----------
-        wavelengths_in : np.ndarray
-            Input wavelength bin edges, shape (N+1,).
-        fluxes_in : np.ndarray
-            Flux per input bin, shape (N,).
-        noise_in_squared : np.ndarray
-            Noise variance per input bin, shape (N,).
-        sed_in : np.ndarray
-            SED counts per input bin, shape (N,).
-        wavelengths_out : np.ndarray
-            Output wavelength bin edges, shape (M+1,).
-
-        Returns
-        -------
-        fluxes_out : np.ndarray
-            Rebinned flux per output bin, shape (M,).
-        noise_out : np.ndarray
-            Rebinned noise per output bin, shape (M,).
-        sed_out : np.ndarray
-            Rebinned SED counts per output bin, shape (M,).
-        """
-        
-        # wavelengths_out is wave edges
-        fluxes_out = np.zeros(len(wavelengths_out) - 1, dtype=fluxes_in.dtype)
-        noise_out = np.zeros(len(wavelengths_out) - 1, dtype=noise_in_squared.dtype)
-        sed_out = np.zeros(len(wavelengths_out) - 1, dtype=sed_in.dtype)
-        
-        for i in numba.prange(len(wavelengths_out) - 1):
-            w_start = wavelengths_out[i]
-            w_end = wavelengths_out[i + 1]
-
-            idx_start = np.searchsorted(wavelengths_in, w_start, side='right') - 1
-            idx_end = np.searchsorted(wavelengths_in, w_end, side='left')
-            
-            idx_start = max(0, idx_start)
-            idx_end = min(len(fluxes_in), idx_end)
-            
-            widths_in = w_end - w_start
-            
-            for j in range(idx_start, idx_end):
-                
-                p_start = wavelengths_in[j]
-                p_end = wavelengths_in[j + 1]
-                
-                overlap_start = max(w_start, p_start)
-                overlap_end = min(w_end, p_end)
-                overlap_width = overlap_end - overlap_start
-                
-                if overlap_width > 0:
-                    frac = overlap_width / widths_in
-                    fluxes_out[i] += fluxes_in[j] * frac
-                    noise_out[i] += noise_in_squared[j] * frac
-                    sed_out[i] += sed_in[j] * frac
-                    
-        for i in numba.prange(len(noise_out)):
-            noise_out[i] = np.sqrt(noise_out[i])
-        
-        return fluxes_out, noise_out, sed_out
     
     def _rebin_fluxes_and_noise_array(
         self,
@@ -1281,32 +959,6 @@ class PostProcess:
         wavelengths_out: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         
-        """
-        Rebins an array of fluxes and noise to new wavelength bins.
-
-        Parameters
-        ----------
-        wavelengths_in : np.ndarray
-            Input array of wavelength bin edges, shape (N+1,).
-        fluxes_in_array : np.ndarray
-            Input flux array, shape (A, B, N).
-        noise_in_array : np.ndarray
-            Input noise array, shape (A, B, N).
-        sed_in_array : np.ndarray
-            Input SED counts array, shape (A, B, N).
-        wavelengths_out : np.ndarray
-            Output array of wavelength bin edges, shape (M+1,).
-
-        Returns
-        -------
-        fluxes_out_array : np.ndarray
-            Rebinned flux, shape (A, B, M).
-        noise_out_array : np.ndarray
-            Rebinned noise, shape (A, B, M).
-        sed_out_array : np.ndarray
-            Rebinned SED counts, shape (A, B, M).
-        """
-        
         new_shape = (fluxes_in_array.shape[0], fluxes_in_array.shape[1], len(wavelengths_out) - 1)
         
         fluxes_out_array = np.zeros(new_shape, dtype=fluxes_in_array.dtype)
@@ -1316,45 +968,18 @@ class PostProcess:
         for i in range(new_shape[0]):
             for j in range(new_shape[1]):
                 
-                fluxes_out, noise_out, sed_out = self._rebin_fluxes_and_noise_numba(
+                fluxes_out, noise_out, sed_out = _rebin_fluxes_and_noise_numba(
                     wavelengths_in, fluxes_in_array[i, j], noise_in_array[i, j]**2,
                     sed_in_array[i, j], wavelengths_out)
                 fluxes_out_array[i, j] = fluxes_out
                 noise_out_array[i, j] = noise_out
                 sed_out_array[i, j] = sed_out
+                
         return fluxes_out_array, noise_out_array, sed_out_array
 
     
     def _convert_to_flux(self, wavelengths: np.ndarray, counts: np.ndarray, noise_counts: np.ndarray,
                          sed_counts: np.ndarray, n_exposure: int, exposure_time: u.Quantity):
-        
-        """
-        Converts electron counts and their noise to physical flux units.
-
-        Parameters
-        ----------
-        wavelengths : np.ndarray
-            Wavelength bin edges, shape (N+1,).
-        counts : np.ndarray
-            Electron counts per bin, shape (N,).
-        noise_counts : np.ndarray
-            Noise in electron counts per bin, shape (N,).
-        sed_counts : np.ndarray
-            SED counts per bin, shape (N,).
-        n_exposure : int
-            Number of exposures for this pixel.
-        exposure_time : astropy.units.Quantity
-            Exposure time per exposure.
-
-        Returns
-        -------
-        fluxes : np.ndarray
-            Flux per bin in the desired unit flux_lambda or flux_nu, shape (N,).
-        noise_fluxes : np.ndarray
-            Noise per bin in the desired unit flux_lambda or flux_nu, shape (N,).
-        sed_fluxes : np.ndarray
-            SED flux per bin in the desired unit, shape (N,).
-        """
         
         delta_waves = np.diff(wavelengths)
         
@@ -1393,31 +1018,6 @@ class PostProcess:
     def _convert_to_flux_array(self, wavelengths: np.ndarray, counts_array: np.ndarray,
                                noise_counts_array: np.ndarray, sed_counts_array: np.ndarray):
         
-        """
-        Converts an array of electron counts and noise counts to fluxes and noise fluxes per bin
-        using the instrument and observation parameters.
-
-        Parameters
-        ----------
-        wavelengths : np.ndarray
-            Wavelength edges per bin, shape (N+1,).
-        counts_array : np.ndarray
-            Electron counts per bin, shape (M, K, N).
-        noise_counts_array : np.ndarray
-            Noise in electron counts per bin, shape (M, K, N).
-        sed_counts_array : np.ndarray
-            SED counts per bin, shape (M, K, N).
-            
-        Returns
-        -------
-        fluxes_array : np.ndarray
-            Flux per bin in the desired unit, shape (M, K, N-1).
-        noise_fluxes_array : np.ndarray
-            Noise per bin in the desired unit, shape (M, K, N-1).
-        sed_fluxes_array : np.ndarray
-            SED flux per bin in the desired unit, shape (M, K, N-1).
-        """
-        
         fluxes_array = np.zeros_like(counts_array)
         noise_fluxes_array = np.zeros_like(noise_counts_array)
         sed_fluxes_array = np.zeros_like(sed_counts_array)
@@ -1447,17 +1047,6 @@ class PostProcess:
         return fluxes_array, noise_fluxes_array, sed_fluxes_array
         
     def _save_dataTensor(self, dataTensor: np.ndarray, savefilename: str):
-        
-        """
-        Save the given data tensor as a FITS file with relevant metadata in the header.
-
-        Parameters
-        ----------
-        dataTensor : np.ndarray
-            The data array to be saved, typically in unit of flux or electron counts.
-        savefilename : str
-            The filename to save the FITS file to.
-        """
         
         hdulist = fits.HDUList()
         primary_hdu = fits.PrimaryHDU()
@@ -1515,29 +1104,6 @@ class PostProcess:
                        noise_array: np.ndarray,
                        sed_array: np.ndarray):
         
-        """
-        Assemble all spectral data to a data tensor.
-        
-        Parameters
-        ----------
-        wavelengths : ndarray
-            Array of wavelength bin edges, with shape (N+1,).
-        signal_array : ndarray
-            Measured signal for each slitlet.
-        noise_array : ndarray
-            Corresponding noise array, same shape as signal_array.
-        sed_array : ndarray
-            Corresponding SED counts array, same shape as signal_array.
-        Returns
-        -------
-        dataTensor : ndarray
-            Data array with shape (n_slitlet_y, n_slitlet_x, 3, n_bins), where:
-              - data[...,0,:] = wavelengths (middle points)
-              - data[...,1,:] = signal (flux or electron counts)
-              - data[...,2,:] = noise (flux or electron counts)
-              - data[...,3,:] = SED counts (flux or electron counts)
-        """
-        
         # middle wavelength of the bin
         wavelengths = (wavelengths[1:] + wavelengths[:-1]) / 2
         
@@ -1557,133 +1123,79 @@ class PostProcess:
                 
         return dataTensor
     
-    @staticmethod
-    def _process_single_spectrum_worker(args):
+    def _process_spectral_dimension(
+        self, 
+        msa_array: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         
-        """
-        Worker function for multiprocessing: processing a single 1D spectrum from the MSA datacube.
+        spectrum_counts_array = np.zeros((
+            self.n_pixels_perpendicular, 
+            self.n_pixels_parallel, 
+            self.waves_at_pixel.shape[0] - 1
+        ))
+        noise_counts_array = np.zeros((
+            self.n_pixels_perpendicular, 
+            self.n_pixels_parallel, 
+            self.waves_at_pixel.shape[0] - 1
+        ))
+        sed_counts_array = np.zeros((
+            self.n_pixels_perpendicular, 
+            self.n_pixels_parallel, 
+            self.waves_at_pixel.shape[0] - 1
+        ))
         
-        This method is designed to be called in parallel on multiple processes. It retrieves a single 1D spectrum
-        from shared memory, integrates the counts over the wavelength bins, adds noise, and returns the counts and noise.
+        exposure_time = self.config['exposureTime'].to_value(u.s)
+        aperture = self.config['aperture'].to_value(u.m)
+        pixel_scale = self.config['pixelScale'].to_value(u.arcsec)
+        numSpecWaveBins = self.config['numSpecWaveBins']
         
-        Parameters
-        ----------
-        args : tuple
-            Tuple containing all necessary parameters and shared memory references for 
-            processing an individual spectrum. Expected elements:
-                - i : int
-                    Y-index in the MSA grid.
-                - j : int
-                    X-index in the MSA grid.
-                - shm_msa_name : str
-                    Shared memory name for the MSA datacube.
-                - msa_shape : tuple
-                    Shape of the MSA datacube array.
-                - msa_dtype : dtype
-                    Data type of MSA datacube array.
-                - shm_exp_name : str
-                    Shared memory name for the exposure map.
-                - exp_shape : tuple
-                    Shape of the exposure array.
-                - exp_dtype : dtype
-                    Data type of the exposure array.
-                - bkg_count_rates : np.ndarray
-                    Array of background count rates.
-                - wavelengths : np.ndarray
-                    Array of wavelengths of the source spectrum.
-                - interp_throughput : function
-                    Interpolation function for throughput vs wavelength.
-                - waves_at_pixel : np.ndarray
-                    Edges of wavelength bins for rebinned spectral pixels.
-                - config_dict : dict
-                    Configuration parameters (exposure time, aperture, pixel scale, etc).
-
-        Returns
-        -------
-        tuple
-            (i, j, spectrum_counts, noise_counts, sed_counts)
-            where spectrum_counts and noise_counts are arrays per rebinned pixel.
-        """
-        
-        (i, j, 
-         shm_msa_name, msa_shape, msa_dtype,
-         shm_exp_name, exp_shape, exp_dtype,
-         bkg_count_rates, wavelengths, interp_throughput,
-         waves_at_pixel, config_dict) = args
-        
-        shm_msa = shared_memory.SharedMemory(name=shm_msa_name)
-        msa_array = np.ndarray(msa_shape, dtype=msa_dtype, buffer=shm_msa.buf)
-        
-        shm_exp = shared_memory.SharedMemory(name=shm_exp_name)
-        n_exposure_array = np.ndarray(exp_shape, dtype=exp_dtype, buffer=shm_exp.buf)
-        
-        spectrum = msa_array[:, i, j]
-        n_exposure = n_exposure_array[i, j]
-        
-        if n_exposure == 0:
-            # signal and noise are both 0
-            spectrum_counts = np.zeros_like(bkg_count_rates)
-            noise_counts = np.zeros_like(bkg_count_rates)
-            sed_counts = np.zeros_like(bkg_count_rates)
-            return i, j, spectrum_counts, noise_counts, sed_counts
-            
-        
-        exposure_time = u.Quantity(config_dict['exposureTime']['value'], 
-                                   config_dict['exposureTime']['unit'])
-        
-        interp_spectrum = interp1d(wavelengths, spectrum, kind='linear', fill_value='extrapolate')
-        
-        aperture = u.Quantity(config_dict['aperture']['value'], 
-                              config_dict['aperture']['unit'])
-        pixel_scale = u.Quantity(config_dict['pixelScale']['value'], 
-                                 config_dict['pixelScale']['unit'])
-        
-        count_rates = []
-        for begin, end in zip(waves_at_pixel[:-1], waves_at_pixel[1:]):
-            wave_rebins = np.linspace(begin, end, config_dict['numSpecWaveBins'])
-            
-            flux = interp_spectrum(wave_rebins)
-            count_rate = PostProcess._integrate_counts_static(flux, wave_rebins, 
-                                                              interp_throughput,
-                                                              aperture, pixel_scale)
-            count_rates.append(count_rate)
-            
-        count_rates = u.Quantity(count_rates)
-        spectrum_count_rates = count_rates
-
-        idx = spectrum_count_rates < 0
-        spectrum_count_rates[idx] = 0 * u.s**-1
-        
-        # ideal SED counts
-        sed_counts = spectrum_count_rates * n_exposure * exposure_time
-        sed_counts = sed_counts.value
-        
-        dark_current = u.Quantity(config_dict['darkCurrent']['value'], 
-                                  config_dict['darkCurrent']['unit'])
-        read_out = config_dict['readOut']
-        
-        spectrum_counts, noise_counts = PostProcess._add_noise_static(
-            spectrum_count_rates, bkg_count_rates, 
-            n_exposure, exposure_time,
-            dark_current, read_out
+        flux_bkg = self.interp_bkg(self.wavelengths)
+        bkg_count_rates = _count_rate_numba(
+            self.wavelengths, flux_bkg, self.waves_at_pixel,
+            self.throughput_dict, self.count_constants, numSpecWaveBins,
+            aperture, pixel_scale
         )
         
-        return i, j, spectrum_counts, noise_counts, sed_counts
+        for i, j in product(range(self.n_pixels_perpendicular), 
+                            range(self.n_pixels_parallel)):
+            
+            n_exposure = self.n_exposure_array[i, j]
+            
+            # print(f'{i}, {j}: {n_exposure}')
+            
+            if n_exposure == 0:
+                spectrum_counts_array[i, j] = np.zeros_like(bkg_count_rates)
+                noise_counts_array[i, j] = np.zeros_like(bkg_count_rates)
+                sed_counts_array[i, j] = np.zeros_like(bkg_count_rates)
+                continue
+        
+            spectrum_count_rates = _count_rate_numba(
+                self.wavelengths, msa_array[:, i, j], self.waves_at_pixel,
+                self.throughput_dict, self.count_constants, numSpecWaveBins, 
+                aperture, pixel_scale
+            )
+            
+            idx = spectrum_count_rates < 0
+            spectrum_count_rates[idx] = 0
+            
+            sed_counts = spectrum_count_rates * n_exposure * exposure_time
+            
+            dark_current = self.config['darkCurrent'].to_value(u.s**-1)
+            read_out = self.config['readOut']
+            
+            spectrum_counts, noise_counts = self._add_noise_static(
+                spectrum_count_rates, bkg_count_rates,
+                n_exposure, exposure_time,
+                dark_current, read_out
+            )
+            
+            spectrum_counts_array[i, j] = spectrum_counts
+            noise_counts_array[i, j] = noise_counts
+            sed_counts_array[i, j] = sed_counts
+        
+        return spectrum_counts_array, noise_counts_array, sed_counts_array
     
 
     def _display_exposures(self, displaySpectrumAtPixel: list, save_path: str):
-        
-        """
-        Display the 2D exposure map and highlight the pixels specified in 'displaySpectrumAtPixel'.
-        This function visualizes the number of exposures for each pixel using a colored grid,
-        and marks selected pixels specified by 'displaySpectrumAtPixel' with scatter dots.
-        The plot is saved as 'MSA_exposures.png' in 'save_path'.
-
-        Args:
-            displaySpectrumAtPixel (list): List of (y, x) tuples indicating pixels to highlight.
-            save_path (str): Directory path where the generated plot will be saved.
-
-        """
         
         ny, nx = self.n_exposure_output.shape
         fig, ax = plt.subplots(figsize=(6, 6))
@@ -1735,25 +1247,6 @@ class PostProcess:
                          displaySpectrumAtPixel: list,
                          displayEmissionLines: list, 
                          save_path: str):
-        
-        """
-        Display and save emission spectra at selected MSA pixels.
-        Each selected pixel's spectrum will be shown with flux and noise, 
-        with the specified emission lines marked, and the plot saved as 'MSA_spectra.png' in 'save_path'.
-
-        Parameters
-        ----------
-        dataTensor : np.ndarray
-            Observation data of shape [ny, nx, 3] where the last dimension 
-            represents (wavelength, flux, noise) arrays at each pixel.
-        displaySpectrumAtPixel : list
-            List of (y, x) pixel tuples to display spectra for.
-        displayEmissionLines : list
-            List of emission line identifiers to mark on spectra.
-        save_path : str
-            Directory where the output plots will be saved.
-
-        """
         
         el_names = []
         el_waves = []
@@ -1832,34 +1325,70 @@ class PostProcess:
         )
         plt.savefig(filename)
         plt.close()
-                    
+    
+    def _display_observation(self, dataTensor: np.ndarray,
+                             displaySpectrumAtPixel: list, save_path: str):
+        
+        ny, nx = dataTensor.shape[0], dataTensor.shape[1]
+        
+        
+        # total flux over all wavelengths
+        display_array = np.sum(
+            dataTensor[:, :, 1], axis=2)
+        
+        unit_type = self.config['unit']
+        unit_comment_dict = {
+            'electron': 'electrons',
+            'flux_lambda': 'erg / cm^2 / s / angstrom',
+            'flux_nu': 'Jy',
+        }
+        
+        # Calculate coverage in arcsec
+        y_coverage = self.config['ditherSize'].to_value(u.arcsec) * ny
+        x_coverage = self.config['slitletSizeParallel'].to_value(u.arcsec) * nx
+        
+        x_tick_min = -x_coverage / 2
+        x_tick_max = x_coverage / 2
+        
+        y_tick_min = -y_coverage / 2
+        y_tick_max = y_coverage / 2
+        
+        fig, ax = plt.subplots(figsize=(6, 6))
+        
+        im = ax.imshow(display_array, origin='lower', cmap='gray_r')
+        ax.set_xlim(0, nx - 1)
+        ax.set_ylim(0, ny - 1)
+        ax.set_title(f'Accumulated flux over all wavelengths')
+        ax.set_aspect('auto')
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes('right', size='5%', pad=0.1)
+        fig.colorbar(im, cax=cax, label=f'Flux [{unit_comment_dict[unit_type]}]')
+        
+        # Set ticks and labels in arcsec
+        ax.set_xticks(np.linspace(0, nx - 1, num=11))
+        ax.set_yticks(np.linspace(0, ny - 1, num=11))
+        ax.set_xticklabels([f"{v:.1f}" for v in np.linspace(x_tick_min, x_tick_max, 11)])
+        ax.set_yticklabels([f"{v:.1f}" for v in np.linspace(y_tick_min, y_tick_max, 11)])
+        ax.set_xlabel("Parallel direction (arcsec)")
+        ax.set_ylabel("Perpendicular direction (arcsec)")
+        
+        for i, (y_pix, x_pix) in enumerate(displaySpectrumAtPixel):
+            # x = ((x_pix + 1) + x_pix) / 2
+            # y = ((y_pix + 1) + y_pix) / 2
+            ax.scatter(x_pix, y_pix, s=10, label=f'Spectrum {i}')
+        
+        ax.legend()
+        plt.tight_layout()
+        savefilename = os.path.join(save_path, 'MSA_observation.png')
+        plt.savefig(savefilename, dpi=300, bbox_inches='tight')
+        plt.close()
+        
     
     def _display_MSA_obs(self, dataTensor: np.ndarray,
                          cube_display: np.ndarray, 
                          slice_wavelength: np.ndarray,
                          displaySpectrumAtPixel: list,
                          save_path: str):
-        
-        """
-        Displays the illstration of the mock observation for MSA. 
-        The function overlays markers on the cube_display image to show where the spectra in displaySpectrumAtPixel
-        were extracted from, and labels them for reference. The image is saved to the specified save_path.
-    
-        Parameters
-        ----------
-        dataTensor : np.ndarray
-            Observation data of shape [ny, nx, 3] where the last dimension 
-            represents (wavelength, flux, noise) arrays at each pixel.
-        cube_display : np.ndarray
-            Background image to be displayed.
-        slice_wavelength : np.ndarray
-            Wavelength of the slice to display.
-        displaySpectrumAtPixel : list
-            List of (y, x) pixel tuples to display spectra for.
-        save_path : str
-            Directory where the output plots will be saved.
-
-        """
         
         y_center_tensor = dataTensor.shape[0] // 2
         x_center_tensor = dataTensor.shape[1] // 2
@@ -1894,7 +1423,7 @@ class PostProcess:
         cube_display = rotate(cube_display.astype(cube_display.dtype.newbyteorder('=')),
                               -self.config['rotate'].to_value(u.deg), 
                               resize=False, mode='constant', cval=np.nan)
-        cube_display = PostProcess._shift_image_static(
+        cube_display = self._shift_image_static(
             cube_display, 
             -self.shift_perpendicular,
             -self.shift_parallel)
@@ -2091,114 +1620,26 @@ class PostProcess:
         plt.tight_layout()
         plt.savefig(os.path.join(save_path, 'MSA_slitlets.png'))
         plt.close()
-        
-        
+    
     @staticmethod
-    @numba.njit(cache=True, fastmath=True, parallel=True)
-    def _overlap_counts_numba(counts_array: np.ndarray,
-                              noise_counts_array: np.ndarray,
-                              sed_counts_array: np.ndarray,
-                              n_pixels_slitlet_parallel: int):
+    def _shift_image_static(cube_slice: np.ndarray, dy: int, dx: int) -> np.ndarray:
         
-        """
-        Combine pixels along the parallel axis to simulate slitlet overlap.
+        # 2d image shift
         
-        Parameters
-        ----------
-        counts_array : np.ndarray
-            The input counts array with shape (n_perpendicular, n_parallel, n_wave).
-        noise_counts_array : np.ndarray
-            The input noise array with the same shape as counts_array.
-        sed_counts_array : np.ndarray
-            The input SED counts array with the same shape as counts_array.
-        n_pixels_slitlet_parallel : int
-            Number of pixels comprising a slitlet in the parallel dispersion direction.
+        h, w = cube_slice.shape
+        result = np.zeros_like(cube_slice) # 2d array
         
-        Returns
-        -------
-        overlapped_counts_array : np.ndarray
-            Counts array after combining pixels, shape (n_perpendicular, n_slitlets, n_wave).
-        overlapped_noise_counts_array : np.ndarray
-            Noise array after combining pixels, same shape as above.
-        """
+        y1 = max(0, dy)
+        y2 = h + min(0, dy)
+        x1 = max(0, dx)
+        x2 = w + min(0, dx)
         
-        # counts_array: 40, 18, num_wave
-        num_pixels_on_detector = counts_array.shape[-1]
-        size_on_detector = num_pixels_on_detector + n_pixels_slitlet_parallel - 1
-        
-        # overlapped_counts_array: 40, 9, num_wave
-        overlapped_shape = (
-            counts_array.shape[0],
-            counts_array.shape[1] // n_pixels_slitlet_parallel,
-            counts_array.shape[-1]
-        )
-        
-        overlapped_counts_array = np.zeros((
-            overlapped_shape
-        ))
-        
-        overlapped_noise_counts_array = np.zeros((
-            overlapped_shape
-        ))
-        
-        overlapped_sed_counts_array = np.zeros((
-            overlapped_shape
-        ))
-        
-        offset = n_pixels_slitlet_parallel // 2
-        
-        for i in numba.prange(overlapped_shape[0]):
-            for j in range(overlapped_shape[1]):
-                
-                line = np.zeros((size_on_detector))
-                
-                for k in range(n_pixels_slitlet_parallel):
-                    line[k: k + num_pixels_on_detector] += \
-                        counts_array[i, j * n_pixels_slitlet_parallel + k]
-                        
-                extracted_counts = line[offset:]
-                overlapped_counts_array[i, j] = extracted_counts
-                
-                noise = np.zeros((size_on_detector))
-                
-                for k in range(n_pixels_slitlet_parallel):
-                    noise[k: k + num_pixels_on_detector] += \
-                        noise_counts_array[i, j * n_pixels_slitlet_parallel + k]**2
-                        
-                extracted_noise = np.sqrt(noise[offset:])
-                overlapped_noise_counts_array[i, j] = extracted_noise
-                        
-                sed = np.zeros((size_on_detector))
-                
-                for k in range(n_pixels_slitlet_parallel):
-                    sed[k: k + num_pixels_on_detector] += \
-                        sed_counts_array[i, j * n_pixels_slitlet_parallel + k]
-                        
-                extracted_sed = sed[offset:]
-                overlapped_sed_counts_array[i, j] = extracted_sed
-                
-        return overlapped_counts_array, overlapped_noise_counts_array, overlapped_sed_counts_array
+        result[y1:y2, x1:x2] = cube_slice[y1 - dy:y2 - dy, x1 - dx:x2 - dx]
+        return result
     
     @staticmethod
     def _downsample_static(cube_slice: np.ndarray, oversample: int) -> np.ndarray:
         
-        """
-        Downsample an array by a factor of 'oversample' using skimage.transform.downscale_local_mean.
-
-        Parameters
-        ----------
-        cube_slice : np.ndarray
-            Input array to be downsampled. Can be 2D or 3D. If 3D, 
-            downsampling is performed on the last two axes (spatial).
-        oversample : int
-            Downsampling factor. The array will be downsampled by this 
-            factor along each spatial dimension.
-
-        Returns
-        -------
-        np.ndarray
-            Downsampled array.
-        """
         
         if len(cube_slice.shape) == 2:
             down_factor = (oversample, oversample)
@@ -2208,28 +1649,39 @@ class PostProcess:
         cube_slice = downscale_local_mean(cube_slice, down_factor)
         return cube_slice
     
+    def _padding_cube(self, cube: np.ndarray, target_shape: tuple) -> np.ndarray:
+        
+        if cube.ndim != len(target_shape):
+            raise ValueError("size must have the same length as cube.shape")
+        
+        padding_size = []
+        for i in range(len(cube.shape)):
+            if target_shape[i] is None:
+                padding_size.append((0, 0))
+            else:
+                
+                if cube.shape[i] < target_shape[i]:
+                
+                    padding_needed = target_shape[i] - cube.shape[i]
+                    before_padding_size = padding_needed // 2
+                    after_padding_size = padding_needed - before_padding_size
+                
+                else:
+                    
+                    before_padding_size = 0
+                    after_padding_size = 0
+                    
+                padding_size.append((before_padding_size, after_padding_size))
+        
+        padding_size = tuple(padding_size)
+        padded_cube = np.pad(cube, padding_size, mode='constant', constant_values=0)
+        return padded_cube
+    
     @staticmethod
     def _padding_static(cube_slice: np.ndarray, target_shape: tuple) -> np.ndarray:
         
-        """
-        Pad a numpy array to a target shape with zeros.
-
-        Parameters
-        ----------
-        cube_slice : np.ndarray
-            Array to pad. Can be 2D or 3D.
-        target_shape : tuple
-            Desired final shape (must match length of cube_slice.shape).
-
-        Returns
-        -------
-        np.ndarray
-            Padded array with shape equal to target_shape.
-        """
-        
         if cube_slice.ndim != len(target_shape):
             raise ValueError("size must have the same length as cube_slice.shape")
-        
         
         padding_size = []
         for i in range(len(cube_slice.shape)):
@@ -2252,24 +1704,6 @@ class PostProcess:
     
     def _standardize(self, cube_slice: np.ndarray, target_size: tuple) -> np.ndarray:
         
-        """
-        Standardize the size of a given cube_slice array to the target_size.
-
-        This method first pads the input array as needed to reach at least the target size, and then
-        center-crops it to make sure the final output is exactly the target_size.
-
-        Parameters
-        ----------
-        cube_slice : np.ndarray
-            Input array to be standardized in size. Can be 2D or 3D.
-        target_size : tuple
-            Desired shape (height, width) or (depth, height, width).
-
-        Returns
-        -------
-        np.ndarray
-            Output array with shape equal to target_size, with original data centered.
-        """
         
         padded_cube_slice = self._padding_static(cube_slice, target_size)
         cropped_cube_slice = self._center_crop(
@@ -2281,22 +1715,6 @@ class PostProcess:
     @staticmethod
     def _center_crop(cube_slice: np.ndarray, target_shape: tuple) -> np.ndarray:
         
-        """
-        Center-crops the input array to the specified target shape.
-
-        Parameters
-        ----------
-        cube_slice : np.ndarray
-            The input array to crop. Should be 2D or 3D.
-        target_shape : tuple
-            The desired output shape, matching the number of dimensions of cube_slice.
-
-        Returns
-        -------
-        np.ndarray
-            The center-cropped array with the specified target_shape.
-        """
-
         if cube_slice.ndim != len(target_shape):
             raise ValueError("target_shape must have the same length as arr.ndim")
 
@@ -2309,302 +1727,7 @@ class PostProcess:
                 end = start + target
                 slices.append(slice(start, end))
 
-        return cube_slice[tuple(slices)]    
-    
-    @staticmethod
-    @numba.njit(cache=True, fastmath=True)
-    def _rotate_coordinates(coordinates: np.ndarray,
-                            inclination: float, azimuth: float) -> np.ndarray:
-        
-        """
-        Rotates input 3D coordinates by inclination and azimuth angles.
-
-        Parameters
-        ----------
-        coordinates : np.ndarray
-            Input array of shape (N, 3), where N is the number of points.
-        inclination : float
-            Inclination angle (degrees). Rotation around Y axis.
-        azimuth : float
-            Azimuth angle (degrees). Rotation around Z axis.
-
-        Returns
-        -------
-        np.ndarray
-            Rotated coordinates array (N, 3).
-        """
-        
-        # 0. Convert degrees to radians
-        inclination = np.deg2rad(inclination)
-        azimuth = np.deg2rad(azimuth)
-        
-        # 1. We need to rotate by NEGATIVE azimuth to undo the twist around Z
-        theta = -azimuth
-        R_azi = np.array([
-            [np.cos(theta), -np.sin(theta), 0.],
-            [np.sin(theta), np.cos(theta), 0.],
-            [0., 0., 1.]
-        ], dtype=np.float32)
-        
-        # 2. We need to rotate by NEGATIVE inclination to undo the tilt around Y
-        # Note: Depending on your definition, if 0 is face-on, use -inclination.
-        # If 90 is face-on (equator), you might need -(inclination - pi/2).
-        # Assuming standard astronomy where i=0 is face-on:
-        alpha = -inclination
-        R_inc = np.array([
-            [np.cos(alpha), 0., np.sin(alpha)],
-            [0., 1., 0.],
-            [-np.sin(alpha), 0., np.cos(alpha)]
-        ], dtype=np.float32)
-        
-        # The Order of Operations for De-projection:
-        # First apply Azimuth undo (R_azi), THEN Inclination undo (R_inc).
-        # Matrix math: R_total = R_inc @ R_azi
-        # Vector math: v_new = R_inc @ (R_azi @ v_old)
-        R = R_inc @ R_azi
-        
-        # Apply to coordinates
-        # (N,3) @ (3,3).T is the correct way to apply matrix R to row vectors
-        rotated_coords = coordinates @ R.T
-        
-        return rotated_coords
-    
-    
-    @staticmethod
-    @numba.njit(cache=True, fastmath=True)
-    def _get_los_velocity(velocities: np.ndarray, 
-                        inclination: float, azimuth: float) -> np.ndarray:
-        
-        """
-        Compute the line-of-sight velocity for each particle given their velocity vectors
-        and the observer's viewing angles.
-
-        Parameters
-        ----------
-        velocities : np.ndarray
-            Velocity array of shape (N, 3), where each row is (vx, vy, vz).
-        inclination : float
-            Inclination angle in degrees (rotation around Y axis).
-        azimuth : float
-            Azimuth angle in degrees (rotation around Z axis).
-
-        Returns
-        -------
-        np.ndarray
-            Array of shape (N,) containing the line-of-sight velocity for each particle,
-            projected according to the specified viewing angles.
-        """
-
-        
-        inclination = np.deg2rad(inclination)
-        azimuth = np.deg2rad(azimuth)
-        
-        # Construct the unit vector pointing towards the observer
-        # Based on standard spherical coordinates:
-        # x = sin(inc) * cos(azi)
-        # y = sin(inc) * sin(azi)
-        # z = cos(inc)
-        
-        los_vector = np.array([
-            np.sin(inclination) * np.cos(azimuth),
-            np.sin(inclination) * np.sin(azimuth),
-            np.cos(inclination)
-        ], dtype=np.float32)
-        
-        # Calculate dot product: v_los = v . n_los
-        # velocities is (N, 3), los_vector is (3,)
-        # The result is (N,)
-        los_velocity = np.dot(velocities, los_vector)
-        
-        return los_velocity
-    
-    @staticmethod
-    @numba.njit(cache=True, fastmath=True)
-    def _get_rotational_velocity(coordinates: np.ndarray, 
-                             velocities: np.ndarray, 
-                             inclination: float, 
-                             azimuth: float, 
-                             bulk_velocity: np.ndarray) -> np.ndarray:
-
-        """
-        Compute the rotational (tangential) velocity for each particle in the galaxy, as observed
-        from a given inclination and azimuthal angle.
-
-        Parameters
-        ----------
-        coordinates : np.ndarray
-            Array of particle coordinates, shape (N, 3).
-        velocities : np.ndarray
-            Array of particle velocities, shape (N, 3).
-        inclination : float
-            Inclination angle in degrees (rotation around Y axis).
-        azimuth : float
-            Azimuth angle in degrees (rotation around Z axis).
-
-        Returns
-        -------
-        np.ndarray
-            Array of shape (N,) containing the rotational (tangential) component of velocity
-            for each particle, projected in the disk plane after deprojection to face-on.
-        """
-
-        # 0. Convert degrees to radians
-        inclination = np.deg2rad(inclination)
-        azimuth = np.deg2rad(azimuth)
-        
-        # 1. Define Rotation Matrices for De-projection (Inverse Rotation)
-        # We use negative angles to rotate from "Observed" -> "Face-on"
-        theta = -azimuth
-        alpha = -inclination
-        
-        # Rotation around Z (Undo Azimuth)
-        R_azi = np.array([
-            [np.cos(theta), -np.sin(theta), 0.],
-            [np.sin(theta),  np.cos(theta), 0.],
-            [0., 0., 1.]
-        ], dtype=np.float32)
-        
-        # Rotation around Y (Undo Inclination)
-        R_inc = np.array([
-            [np.cos(alpha), 0., np.sin(alpha)],
-            [0., 1., 0.],
-            [-np.sin(alpha), 0., np.cos(alpha)]
-        ], dtype=np.float32)
-        
-        # Combined Rotation Matrix: Apply Azi first, then Inc
-        R = R_inc @ R_azi
-        
-        # subtract bulk motion of the subhalo
-        velocities -= bulk_velocity
-        
-        # 2. Rotate both Positions and Velocities
-        # We transform the entire frame so the galaxy lies in the XY plane
-        pos_rot = coordinates @ R.T
-        vel_rot = velocities @ R.T
-        
-        # 3. Subtract center-of-mass velocity in the rotated frame
-        # This ensures particles near the center have zero mean velocity
-        # com_vx = np.mean(vel_rot[:, 0])
-        # com_vy = np.mean(vel_rot[:, 1])
-        # vel_rot[:, 0] -= com_vx
-        # vel_rot[:, 1] -= com_vy
-        
-        # 4. Extract In-Plane Components
-        # In the face-on frame, the LOS is the Z-axis.
-        # The "perpendicular to LOS" components are just x and y.
-        x = pos_rot[:, 0]
-        y = pos_rot[:, 1]
-        vx = vel_rot[:, 0]
-        vy = vel_rot[:, 1]
-        
-        # 5. Calculate Planar Radius
-        # Avoid division by zero for the exact center
-        R_plane = np.sqrt(x**2 + y**2)
-        
-        # 6. Calculate Tangential/Rotational Velocity
-        # Formula: Cross product magnitude in 2D / Radius
-        # v_rot = (r x v) / |r|  -> (x*vy - y*vx) / R
-        
-        # with np.errstate(divide='ignore', invalid='ignore'):
-        #     v_rot = (x * vy - y * vx) / R_plane
-        
-        v_rot = np.zeros_like(R_plane)
-        for i in range(len(R_plane)):
-            v_rot[i] = (x[i] * vy[i] - y[i] * vx[i]) / R_plane[i]
-        
-        # Handle the center point (where R_plane is 0)
-        v_rot = np.nan_to_num(v_rot)
-        
-        return v_rot
-    
-    @staticmethod
-    @numba.njit(cache=True, fastmath=True)
-    def _transform(coords: np.ndarray, rotate: float, 
-                   shiftPerpendicular: float, shiftParallel: float):
-        
-        """
-        Apply a 2D affine transformation to 3D coordinates in the galaxy plane.
-        
-        This method rotates the input coordinates around the z-axis by the given angle `rotate`
-        (in degrees), then shifts the coordinates by `shiftPerpendicular` along the y-axis
-        and by `shiftParallel` along the x-axis, both in the rotated plane.
-        
-        Parameters
-        ----------
-        coords : np.ndarray
-            Array of shape (N, 3), the (x, y, z) coordinates to transform.
-        rotate : float
-            Rotation angle in degrees (counter-clockwise; negative value rotates clockwise).
-        shiftPerpendicular : float
-            Amount to shift along the y-axis (perpendicular direction) after rotation.
-        shiftParallel : float
-            Amount to shift along the x-axis (parallel direction) after rotation.
-        
-        Returns
-        -------
-        shifted_coords : np.ndarray
-            Array of shape (N, 3), the transformed coordinates.
-        """
-        
-        # rotate the plane instead of the slitlets
-        rotate = np.radians(-rotate)
-        
-        c, s = np.cos(rotate), np.sin(rotate)
-        rotation_matrix = np.array([
-            [c, -s, 0.],
-            [s, c, 0.],
-            [0., 0., 1.]
-        ], dtype=np.float32)
-        rotated_coords = coords @ rotation_matrix.T
-        
-        # shift perpendicular and parallel are in y and x direction respectively
-        # similarly, shift the plane instead of the slitlets
-        shift_vector = np.array([-shiftPerpendicular, -shiftParallel, 0.], dtype=np.float32)
-        shifted_coords = rotated_coords + shift_vector
-        
-        return shifted_coords
-        
-    
-    @staticmethod
-    def _calc_stats(coords: np.ndarray, values: np.ndarray,
-                    bins_perpendicular: np.ndarray,
-                    bins_parallel: np.ndarray,
-                    statistic: str) -> np.ndarray:
-        
-        """
-        Calculate binned statistics (e.g., mean, median, std) of `values` as a function
-        of 2D projected coordinates provided by `coords` using bins defined by
-        `bins_perpendicular` and `bins_parallel`.
-
-        Parameters
-        ----------
-        coords : np.ndarray
-            Array of shape (N, 2), columns are (perpendicular, parallel) coordinates for each particle.
-        values : np.ndarray
-            1D array with N elements, values to compute statistic of.
-        bins_perpendicular : np.ndarray
-            Bin edges for the perpendicular direction.
-        bins_parallel : np.ndarray
-            Bin edges for the parallel direction.
-        statistic : str
-            Statistic to compute ('mean', 'median', 'std', etc).
-
-        Returns
-        -------
-        stats : np.ndarray
-            2D array of statistic values for each (perpendicular, parallel) bin,
-            shape (len(bins_perpendicular)-1, len(bins_parallel)-1).
-        
-        Notes
-        -----
-        Uses scipy.stats.binned_statistic_2d for the calculation.
-        """
-        
-        stats, _, _, _ = binned_statistic_2d(
-            coords[:, 1], coords[:, 0], values, 
-            statistic=statistic, bins=[bins_perpendicular, bins_parallel]
-        )
-        return stats
+        return cube_slice[tuple(slices)]
     
     def input_particle_file(self, particle_file: str):
         
@@ -2624,29 +1747,35 @@ class PostProcess:
     def _save_properties(self, properties_array: dict,
                          properties_units: dict, save_path: str):
         
-        """
-        Save the provided properties arrays and their units to a FITS file.
-
-        Parameters
-        ----------
-        properties_array : dict
-            A dictionary where keys are property names and values are 2D numpy arrays
-            containing the property values mapped to the grid (e.g., projected binned map).
-        properties_units : dict
-            A dictionary mapping property names to unit strings or astropy units.
-        save_path : str
-            The directory to which the FITS file will be saved. Filename fixed as 'properties.fits'.
-
-        This method generates a multi-extension FITS file with one extension for each property.
-        Each extension contains the data array for a property with the property name and unit
-        set in the FITS header for metadata clarity. The primary HDU is left empty.
-        """
+        n_pixel_perpendicular = self.n_pixels_perpendicular
+        n_pixel_parallel = self.n_pixels_output_parallel
         
         hdulist = fits.HDUList()
         primary_hdu = fits.PrimaryHDU()
         hdulist.append(primary_hdu)
         
         for prop, array in properties_array.items():
+            
+            # only save central part 
+            
+            y_center_array = array.shape[0] // 2
+            x_center_array = array.shape[1] // 2
+            
+            # For extracting n elements centered around center:
+            # Start: center - n//2, End: center + (n+1)//2
+            # This works correctly for both odd and even n
+            perpendicular_slice = slice(
+                y_center_array - n_pixel_perpendicular // 2,
+                y_center_array + (n_pixel_perpendicular + 1) // 2
+            )
+            
+            parallel_slice = slice(
+                x_center_array - n_pixel_parallel // 2,
+                x_center_array + (n_pixel_parallel + 1) // 2
+            )
+            
+            array = array[perpendicular_slice, parallel_slice]
+            
             hdu = fits.ImageHDU(array)
             # Add property name and unit to header
             hdu.header['PROP'] = prop
@@ -2654,28 +1783,11 @@ class PostProcess:
             hdu.header['UNIT'] = unit
             hdulist.append(hdu)
         
-        filename = os.path.join(save_path, f'properties.fits')
+        filename = os.path.join(save_path, f'True_properties.fits')
         hdulist.writeto(filename, overwrite=True)
         
     def _display_properties(self, properties_array: dict,
                             properties_units: dict, save_path: str):
-        
-        """
-        Display the provided 2D property maps as images and save the resulting figure.
-        The function creates a multi-panel plot, one subplot per property, with proper
-        axis scaling, units in titles, colorbars, and axis labels matching the projected
-        spatial coordinates. The resulting figure is saved as 'properties.png' in save_path.
-
-        Parameters
-        ----------
-        properties_array : dict
-            Dictionary where keys are property names and values are 2D numpy arrays
-            representing the value of that property projected onto the MSA grid.
-        properties_units : dict
-            Dictionary mapping property names to the unit for that property (str or astropy unit).
-        save_path : str
-            Directory where the output image will be saved.
-        """
         
         fig, ax = plt.subplots(1, len(properties_array),
                                figsize=(5 * len(properties_array), 4))
@@ -2697,7 +1809,8 @@ class PostProcess:
                 unit = '1'
             elif unit == 'solMass':
                 unit = 'Msun'
-            ax[i].imshow(array, origin='lower', aspect='auto')
+            ax[i].imshow(array, origin='lower', aspect='auto',
+                         cmap='gray_r')
             cbar = plt.colorbar(ax[i].images[0], ax=ax[i])
             ax[i].set_title(f'{prop} ({unit})')
             
@@ -2710,6 +1823,34 @@ class PostProcess:
                 ax[i].set_ylabel("Perpendicular direction (arcsec)")
             ax[i].set_xlim(0, array.shape[1] - 1)
             ax[i].set_ylim(0, array.shape[0] - 1)
+            
+            # Draw rectangle with specified size in arcsec
+            # Rectangle bounds in arcsec
+            rect_x_min_arcsec = -self.size_parallel.to_value(u.arcsec) / 2
+            rect_x_max_arcsec = self.size_parallel.to_value(u.arcsec) / 2
+            rect_y_min_arcsec = -self.size_perpendicular.to_value(u.arcsec) / 2
+            rect_y_max_arcsec = self.size_perpendicular.to_value(u.arcsec) / 2
+            
+            # Convert arcsec to pixel coordinates
+            x_pixel_min = (rect_x_min_arcsec - x_tick_min) / (x_tick_max - x_tick_min) * (array.shape[1] - 1)
+            x_pixel_max = (rect_x_max_arcsec - x_tick_min) / (x_tick_max - x_tick_min) * (array.shape[1] - 1)
+            y_pixel_min = (rect_y_min_arcsec - y_tick_min) / (y_tick_max - y_tick_min) * (array.shape[0] - 1)
+            y_pixel_max = (rect_y_max_arcsec - y_tick_min) / (y_tick_max - y_tick_min) * (array.shape[0] - 1)
+            
+            # Create rectangle patch
+            rect_width = x_pixel_max - x_pixel_min
+            rect_height = y_pixel_max - y_pixel_min
+            rectangle = patches.Rectangle(
+                (x_pixel_min, y_pixel_min),
+                rect_width,
+                rect_height,
+                linewidth=2,
+                edgecolor='red',
+                linestyle='--',
+                alpha=0.5,
+                facecolor='none'
+            )
+            ax[i].add_patch(rectangle)
         
         plt.tight_layout()
         savefilename = os.path.join(save_path, f'True_properties.png')
@@ -2718,35 +1859,6 @@ class PostProcess:
     
     def _get_properties(self, properties: list[str]=None,
                              functions: Union[None, list[callable]]=[None]):
-        
-        """
-        Retrieve or compute physical properties projected onto the MSA grid.
-
-        This function loads particle data from the associated file and projects specified physical
-        properties (e.g., mass, star formation rate) onto the grid defined by the instrument's
-        perpendicular and parallel axes, taking into account cosmological and observational parameters.
-
-        Parameters
-        ----------
-        properties : list of str, optional
-            A list of property names (such as ['mass', 'sfr', ...]) to extract, matching columns in the particle file.
-            If None, defaults to extracting 'mass'.
-        functions : list of callable or None, optional
-            A list of functions to apply to each property (e.g. [np.log10, None]), or [None] for no modification.
-            The length should match 'properties', or [None] will be applied to each property by default.
-
-        Returns
-        -------
-        properties_array : dict
-            Dictionary mapping property names to 2D numpy arrays (MSA-grid projections).
-        properties_units : dict
-            Dictionary mapping property names to their physical units (astropy.unit or str).
-
-        Notes
-        -----
-        - Uses viewing angles, distances, offsets, and pixel grid setup from self.config and the current PostProcess object.
-        - May apply provided functions to post-process resulting property arrays.
-        """
         
         if hasattr(self, 'input_particle_file_called') \
             and self.input_particle_file_called \
@@ -2772,19 +1884,27 @@ class PostProcess:
         phyRes_parallel = self.config['lumiDis'] * self.config['slitletSizeParallel'].to_value(u.rad)
         phyRes_parallel = phyRes_parallel.to_value(u.kpc)
         
-        bins_perpendicular = np.linspace(-phyRes_perpendicular * (self.n_pixels_perpendicular // 2),
-                                         phyRes_perpendicular * (self.n_pixels_perpendicular // 2), 
-                                         self.n_pixels_perpendicular + 1)
+        n_pixels_perpendicular_display = int(self.config['displayBoxSize'] / self.config['ditherSize'])
         
-        if self.n_pixels_output_parallel % 2 == 0:
-            bins_parallel = np.linspace(-phyRes_parallel * (self.n_pixels_output_parallel // 2),
-                                        phyRes_parallel * (self.n_pixels_output_parallel // 2), 
-                                        self.n_pixels_output_parallel + 1)
+        bins_perpendicular = np.linspace(-phyRes_perpendicular * (n_pixels_perpendicular_display // 2),
+                                         phyRes_perpendicular * (n_pixels_perpendicular_display // 2), 
+                                         n_pixels_perpendicular_display + 1)
+        
+        n_pixels_parallel_display = int(self.config['displayBoxSize'] / self.config['slitletSizeParallel'])
+        
+        if n_pixels_parallel_display % 2 == 0:
+            bins_parallel = np.linspace(-phyRes_parallel * (n_pixels_parallel_display // 2),
+                                        phyRes_parallel * (n_pixels_parallel_display // 2), 
+                                        n_pixels_parallel_display + 1)
         else:
             half = phyRes_parallel / 2
-            bins_parallel = np.linspace(-phyRes_parallel * (self.n_pixels_output_parallel // 2) - half, 
-                                        phyRes_parallel * (self.n_pixels_output_parallel // 2) + half,
-                                        self.n_pixels_output_parallel + 1)
+            bins_parallel = np.linspace(-phyRes_parallel * (n_pixels_parallel_display // 2) - half, 
+                                        phyRes_parallel * (n_pixels_parallel_display // 2) + half,
+                                        n_pixels_parallel_display + 1)
+        
+        # for debug
+        # bins_perpendicular = np.linspace(-40, 40, 100) # kpc
+        # bins_parallel = np.linspace(-40, 40, 100) # kpc
         
         # in kpc
         shift_perpendicular = self.config['lumiDis'] * self.config['offsetPerpendicular'].to_value(u.rad)
@@ -2820,408 +1940,124 @@ class PostProcess:
                 continue
         
         return properties_array, properties_units
-    
-    @staticmethod
-    def _age_interp(cosmology: Cosmology) -> interp1d:
-        z = np.linspace(0, 4, 1000)
-        t = cosmology.age(z).to(u.Myr).value
-        fage = interp1d(z, t, kind='cubic',
-                        bounds_error=False, fill_value='extrapolate')
-        return fage
-    
-    @staticmethod
-    def get_metallicity_for_starforming_region(
-        particle_file: str, inclination: float, azimuth: float, 
-        bins_perpendicular: np.ndarray, bins_parallel: np.ndarray, 
-        transformation: dict, subhalo_info: dict, configs: dict):
-        
-        fage = PostProcess._age_interp(configs['cosmology'])
-        
-        particles = {}
-        with h5py.File(particle_file, 'r') as file:
-            
-            particles['GFM_StellarFormationTime'] = file['PartType4']['GFM_StellarFormationTime'][:].astype(np.float32)
-            snapshot_age = fage(configs['snapRedshift']) # in Myr
-            particles['age'] = snapshot_age - fage(1/particles['GFM_StellarFormationTime'] - 1)
-            
-            # star formation region mask
-            mask = np.where((particles['age'] < 10) & (particles['GFM_StellarFormationTime'] > 0))
-            
-            particles['Coordinates'] = file['PartType4']['Coordinates'][mask].astype(np.float32)
-            unit = file['PartType4']['Coordinates'].attrs['unit']
-            particles['Coordinates'] = (particles['Coordinates'] * u.Unit(unit)).to_value(u.kpc)
-            
-            particles['GFM_Metallicity'] = file['PartType4']['GFM_Metallicity'][mask].astype(np.float32)
-            unit_metallicity = "1"
-
-        # rotate to observing direction
-        coords = PostProcess._rotate_coordinates(
-            particles['Coordinates'], inclination, azimuth)
-        
-        # apply transformation for coords in x-y plane if rotate and shifts in config is not 0
-        coords = PostProcess._transform(coords, transformation['rotate'], 
-                                        transformation['shiftPerpendicular'],
-                                        transformation['shiftParallel'])
-        
-        metallicity = particles['GFM_Metallicity']
-        stats = PostProcess._calc_stats(
-            coords, metallicity, 
-            bins_perpendicular, bins_parallel, statistic='mean')
-        
-        return stats, unit_metallicity
-    
-    @staticmethod
-    def get_gas_metallicity(particle_file: str, inclination: float, azimuth: float, 
-                            bins_perpendicular: np.ndarray, bins_parallel: np.ndarray, 
-                            transformation: dict, subhalo_info: dict, configs: dict):
-        
-        particles = {}
-        with h5py.File(particle_file, 'r') as file:
-            # gas in PartType0, make sure the gases are included in preprocessing
-            particles['Coordinates'] = file['PartType0']['Coordinates'][:].astype(np.float32)
-            unit = file['PartType0']['Coordinates'].attrs['unit']
-            particles['Coordinates'] = (particles['Coordinates'] * u.Unit(unit)).to_value(u.kpc)
-            
-            particles['GFM_Metallicity'] = file['PartType0']['GFM_Metallicity'][:].astype(np.float32)
-            unit_metallicity = "1"
-            
-        coords = PostProcess._rotate_coordinates(
-            particles['Coordinates'], inclination, azimuth)
-        
-        coords = PostProcess._transform(coords, transformation['rotate'], 
-                                        transformation['shiftPerpendicular'],
-                                        transformation['shiftParallel'])
-        
-        metallicity = particles['GFM_Metallicity']
-        stats = PostProcess._calc_stats(
-            coords, metallicity, 
-            bins_perpendicular, bins_parallel, statistic='mean')
-        
-        return stats, unit_metallicity
-    
-    # @staticmethod
-    # def get_rotational_velocity(
-    #     particle_file: str, inclination: float, azimuth: float, 
-    #     bins_perpendicular: np.ndarray, bins_parallel: np.ndarray, 
-    #     bulk_velocity: Union[None, np.ndarray] = None):
-        
-    #     particles = {}
-    #     with h5py.File(particle_file, 'r') as file:
-    #         particles['Coordinates'] = file['PartType4']['Coordinates'][:].astype(np.float32)
-    #         unit = file['PartType4']['Coordinates'].attrs['unit']
-    #         particles['Coordinates'] = particles['Coordinates'] * u.Unit(unit).to(u.kpc)
-            
-    #         particles['Velocities'] = file['PartType4']['Velocities'][:].astype(np.float32)
-    #         unit_velocities = file['PartType4']['Velocities'].attrs['unit']
-            
-    #     coords = PostProcess._rotate_coordinates(
-    #         particles['Coordinates'], inclination, azimuth)
-    #     rotational_velocity = PostProcess._get_rotational_velocity(
-    #         particles['Coordinates'], particles['Velocities'], inclination, azimuth, 
-    #         bulk_velocity=bulk_velocity)
-        
-    #     stats = PostProcess._calc_stats(
-    #         coords, rotational_velocity, 
-    #         bins_perpendicular, bins_parallel, statistic='mean')
-        
-    #     return stats, unit_velocities
-        
-    @staticmethod
-    def get_los_velocity(
-        particle_file: str, inclination: float, azimuth: float, 
-        bins_perpendicular: np.ndarray, bins_parallel: np.ndarray, 
-        transformation: dict, subhalo_info: dict, configs: dict):
-        
-        particles = {}
-        with h5py.File(particle_file, 'r') as file:
-            particles['Coordinates'] = file['PartType4']['Coordinates'][:].astype(np.float32)
-            unit = file['PartType4']['Coordinates'].attrs['unit']
-            particles['Coordinates'] = (particles['Coordinates'] * u.Unit(unit)).to_value(u.kpc)
-            
-            particles['Velocities'] = file['PartType4']['Velocities'][:].astype(np.float32)
-            unit_velocities = file['PartType4']['Velocities'].attrs['unit']
-            
-        coords = PostProcess._rotate_coordinates(
-            particles['Coordinates'], inclination, azimuth)
-        
-        coords = PostProcess._transform(coords, transformation['rotate'], 
-                                        transformation['shiftPerpendicular'],
-                                        transformation['shiftParallel'])
-        
-        los_velocity = PostProcess._get_los_velocity(
-            particles['Velocities'], inclination, azimuth)
-            
-        stats = PostProcess._calc_stats(
-            coords, los_velocity, 
-            bins_perpendicular, bins_parallel, statistic='mean')
-            
-        return stats, unit_velocities
-    
-    @staticmethod
-    def get_velocity_dispersion(
-        particle_file: str, inclination: float, azimuth: float, 
-        bins_perpendicular: np.ndarray, bins_parallel: np.ndarray,
-        transformation: dict, subhalo_info: dict, configs: dict):
-        
-        particles = {}
-        with h5py.File(particle_file, 'r') as file:
-            particles['Coordinates'] = file['PartType4']['Coordinates'][:].astype(np.float32)
-            unit = file['PartType4']['Coordinates'].attrs['unit']
-            particles['Coordinates'] = (particles['Coordinates'] * u.Unit(unit)).to_value(u.kpc)
-            
-            particles['Velocities'] = file['PartType4']['Velocities'][:].astype(np.float32)
-            unit_velocities = file['PartType4']['Velocities'].attrs['unit']
-            
-        coords = PostProcess._rotate_coordinates(
-            particles['Coordinates'], inclination, azimuth)
-        
-        coords = PostProcess._transform(coords, transformation['rotate'], 
-                                        transformation['shiftPerpendicular'],
-                                        transformation['shiftParallel'])
-        
-        los_velocity = PostProcess._get_los_velocity(
-            particles['Velocities'], inclination, azimuth)
-            
-        stats = PostProcess._calc_stats(
-            coords, los_velocity, 
-            bins_perpendicular, bins_parallel, statistic='std')
-            
-        return stats, unit_velocities
-    
-    @staticmethod
-    def get_mass(
-        particle_file: str, inclination: float, azimuth: float, 
-        bins_perpendicular: np.ndarray, bins_parallel: np.ndarray, 
-        transformation: dict, subhalo_info: dict, configs: dict):
-        
-        particles = {}
-        with h5py.File(particle_file, 'r') as file:
-            particles['Coordinates'] = file['PartType4']['Coordinates'][:].astype(np.float32)
-            unit = file['PartType4']['Coordinates'].attrs['unit']
-            particles['Coordinates'] = (particles['Coordinates'] * u.Unit(unit)).to_value(u.kpc)
-            
-            particles['Masses'] = file['PartType4']['Masses'][:].astype(np.float32)
-            unit_masses = file['PartType4']['Masses'].attrs['unit']
-            
-        coords = PostProcess._rotate_coordinates(
-            particles['Coordinates'], inclination, azimuth)
-        
-        coords = PostProcess._transform(coords, transformation['rotate'], 
-                                        transformation['shiftPerpendicular'],
-                                        transformation['shiftParallel'])
-        
-        masses = particles['Masses']
-        
-        stats = PostProcess._calc_stats(
-            coords, masses, 
-            bins_perpendicular, bins_parallel, statistic='sum')
-        
-        return stats, unit_masses
         
     def create_MSA_dataTensor(self):
         
         """
-        Create the data tensor for the MSA simulation, including signal and noise arrays.
+        Create the data tensor for the MSA simulation, including signal, noise, and sed arrays.
 
         This method orchestrates the full creation process for the MSA (Multi-Shutter Array) data tensor.
         It performs the following major steps:
-            - Define the wavelength sampling based on instrument resolution
-            - Retrieve or generate the relevant PSF cube
-            - Simulate detector sampling over the spatial and spectral grids
-            - Compute signal and noise arrays for each slitlet
-            - Assemble all outputs into a single, well-formatted data tensor
+
+        - Define the wavelength sampling based on instrument resolution
+        - Retrieve or generate the relevant PSF cube
+        - Simulate detector sampling over the spatial and spectral grids
+        - Compute signal, noise, and sed arrays for each slitlet
+        - Assemble all outputs into a single, well-formatted data tensor (4 dimensions)
 
         Returns
         -------
         dataTensor : np.ndarray
-            The full (n_slitlet_y, n_slitlet_x, 3, n_bins) array, ready for export or further use.
-              - data[...,0,:] = wavelengths (middle points)
-              - data[...,1,:] = signal (flux or electron counts)
-              - data[...,2,:] = noise (flux or electron counts)
+            The full (n_slitlet_y, n_slitlet_x, 4, n_bins) array, ready for export or further use.
+            
+            Array structure:
+            
+            - data[...,0,:] = wavelengths (middle points)
+            - data[...,1,:] = signal (flux or electron counts)
+            - data[...,2,:] = noise (flux or electron counts)
+            - data[...,3,:] = sed (flux or electron counts)
         """
 
+        self.logger.info('MSA-3D simulation starts...')
         
-        waves_by_resolution = self._get_waves_by_resolution()
-        waves_at_pixel = self._get_waves_at_pixel()
+        self._get_waves_by_resolution()
+        self._get_waves_at_pixel()
+        
+        self.logger.info(f'Step 1: Processing spatial dimension (PSF convolution and transformation)')
+        
+        start_time = time.time()
         
         self.logger.info('Getting PSF cubes...')
-        psf_cube = self._get_PSF_cube()
+        self._get_PSF_cube()
         
-        self.logger.info('Creating MSA array...')
+        self.logger.info(f'PSF cube shape: {self.psf_cube.shape}')
+        self.logger.info(f'Data cube shape: {self.dataCube.shape}')
+        
+        msa_array = self._process_spatial_dimension()
+        self.logger.info(f'MSA cube shape after spatial processing: {msa_array.shape}')
+        
+        end_time = time.time()
+        self.logger.info(f'Time taken for step 1: {end_time - start_time:.2f} seconds')
+        
+        self.logger.info(f'Step 2: Processing spectral dimension (Simulation of spectra)')
+        
+        self.logger.info('Getting JWST background...')
+        self._get_bkg()
         
         start_time = time.time()
         
-        shm_cube = shared_memory.SharedMemory(create=True, size=self.dataCube.nbytes)
-        shm_cube_array = np.ndarray(self.dataCube.shape, dtype=self.dataCube.dtype, buffer=shm_cube.buf)
-        shm_cube_array[:] = self.dataCube[:]
+        spectrum_counts_array, noise_counts_array, sed_counts_array =\
+            self._process_spectral_dimension(msa_array)
         
-        shm_psf = shared_memory.SharedMemory(create=True, size=psf_cube.nbytes)
-        shm_psf_array = np.ndarray(psf_cube.shape, dtype=psf_cube.dtype, buffer=shm_psf.buf)
-        shm_psf_array[:] = psf_cube[:]
-        
-        info_dict = {
-            'n_pixels_perpendicular': self.n_pixels_perpendicular,
-            'n_pixels_parallel': self.n_pixels_parallel,
-            'rotation_angle': self.config['rotate'].to_value(u.deg),
-            'shift_perpendicular': self.shift_perpendicular,
-            'shift_parallel': self.shift_parallel,
-            'rescale_ratio_perpendicular': self.rescale_ratio_perpendicular,
-            'rescale_ratio_parallel': self.rescale_ratio_parallel,
-            'oversample': self.config['oversample'],
-            'num_threads': self.config['numThreads']
-        }
-        
-        args_list = [
-            (i,
-             shm_cube.name, shm_cube_array.shape, shm_cube_array.dtype,
-             shm_psf.name, shm_psf_array.shape, shm_psf_array.dtype, 
-             info_dict
-             )
-            for i in range(len(self.wavelengths))
-        ]
-        
-        # with mp.Pool(processes=self.config['nJobs']) as pool:
-        #     results = pool.map(self._process_single_spatial_slice_static, args_list)
-            
-        results = []
-        for args in args_list:
-            result = self._process_single_spatial_slice_static(args)
-            results.append(result)
-        
-        shm_cube.close()
-        shm_cube.unlink()
-        shm_psf.close()
-        shm_psf.unlink()
-        
-        msa_array = np.array(results)
-            
-        end_time = time.time()
-        self.logger.info(f'Time taken: {end_time - start_time:.2f} seconds')
-        
-        # stach slice, (n_wavelengths, n_pixels_perpendicular, n_pixels_parallel)
-        msa_array = np.array(msa_array)
-        
-        self.logger.info('Calculating background count rates...')
-        bkg_count_rates = self._calc_bkg(waves_at_pixel)
-        
-        self.logger.info('Processing MSA spectra...')
-        start_time = time.time()
-        
-        shm_msa = shared_memory.SharedMemory(create=True, size=msa_array.nbytes)
-        shm_msa_array = np.ndarray(msa_array.shape, dtype=msa_array.dtype, buffer=shm_msa.buf)
-        shm_msa_array[:] = msa_array[:]
-        
-        shm_exp = shared_memory.SharedMemory(create=True, size=self.n_exposure_array.nbytes)
-        shm_exp_array = np.ndarray(self.n_exposure_array.shape, dtype=self.n_exposure_array.dtype, buffer=shm_exp.buf)
-        shm_exp_array[:] = self.n_exposure_array[:]
-        
-        # Prepare config dict (convert astropy Quantity to dict with value and unit)
-        config_dict = {}
-        for key, value in self.config.items():
-            if isinstance(value, u.Quantity):
-                config_dict[key] = {
-                    'value': value.value,
-                    'unit': str(value.unit)
-                }
-            else:
-                config_dict[key] = value
-        
-        # Prepare arguments for workers (only small data needs to be pickled)
-        args_list = [
-            (i, j,
-             shm_msa.name, msa_array.shape, msa_array.dtype,
-             shm_exp.name, self.n_exposure_array.shape, self.n_exposure_array.dtype,
-             bkg_count_rates, self.wavelengths, self.interp_throughput,
-             waves_at_pixel, config_dict)
-            for i, j in product(range(self.n_pixels_perpendicular),
-                                range(self.n_pixels_parallel))
-        ]
-        
-        with mp.Pool(processes=self.config['numThreads']) as pool:
-            results = pool.map(self._process_single_spectrum_worker, args_list)
-            
-        # results = []
-        # for args in args_list:
-        #     result = self._process_single_spectrum_worker(args)
-        #     results.append(result)
-        
-        # Clean up shared memory
-        shm_msa.close()
-        shm_msa.unlink()
-        shm_exp.close()
-        shm_exp.unlink()
-        
-        end_time = time.time()
-        self.logger.info(f'Time taken: {end_time - start_time:.2f} seconds')
-        
-        i, j, counts_val, noise_counts_val, sed_counts_val = results[0]
-        
-        # 40, 18, num_wave
-        counts_array = np.zeros((
-            self.n_pixels_perpendicular, 
-            self.n_pixels_parallel,
-            counts_val.shape[0]
-        ))
-        
-        # 40, 18, num_wave
-        noise_counts_array = np.zeros((
-            self.n_pixels_perpendicular, 
-            self.n_pixels_parallel,
-            noise_counts_val.shape[0]
-        ))
-        
-        sed_counts_array = np.zeros((
-            self.n_pixels_perpendicular, 
-            self.n_pixels_parallel,
-            sed_counts_val.shape[0]
-        ))
-        
-        for result in results:
-            i, j, counts_val, noise_counts_val, sed_counts_val = result
-            counts_array[i, j] = counts_val
-            noise_counts_array[i, j] = noise_counts_val
-            sed_counts_array[i, j] = sed_counts_val
-
         # input: 40, 18, num_wave, output: 40, 9, num_wave
-        counts_array, noise_counts_array, sed_counts_array = self._overlap_counts_numba(
-            counts_array, noise_counts_array, sed_counts_array, self.n_pixels_slitlet_parallel
+        spectrum_counts_array, noise_counts_array, sed_counts_array = _overlap_counts_numba(
+            spectrum_counts_array, noise_counts_array, sed_counts_array, self.n_pixels_slitlet_parallel
         )
 
         if self.config['unit'] != 'electron':
             
+            self.logger.info(f'Convert unit to {self.config["unit"]}...')
+            
             signal_array, noise_array, sed_array = self._convert_to_flux_array(
-                waves_at_pixel, counts_array, noise_counts_array, sed_counts_array
+                self.waves_at_pixel, spectrum_counts_array, noise_counts_array, sed_counts_array
             )
         else:
-            signal_array = counts_array
+            signal_array = spectrum_counts_array
             noise_array = noise_counts_array
             sed_array = sed_counts_array
         
         # 40, 9, num_wave
         signal_array, noise_array, sed_array = self._rebin_fluxes_and_noise_array(
-            waves_at_pixel, signal_array, noise_array, sed_array, waves_by_resolution
+            self.waves_at_pixel, signal_array, noise_array, sed_array, self.waves_by_resolution
         )
         
         dataTensor = self._assemble_data(
-            waves_by_resolution, signal_array, noise_array, sed_array
+            self.waves_by_resolution, signal_array, noise_array, sed_array
         )
         
-        self.logger.info('Saving data tensor...')
+        end_time = time.time()
+        self.logger.info(f'Time taken for step 2: {end_time - start_time:.2f} seconds')
+        
+        self.logger.info(f'MSA-3D simulation completed. Output shape: {dataTensor.shape}')
+        
         savefilename = os.path.join(self.save_path, f'MSA_dataTensor.fits')
+        self.logger.info(f'Saving data tensor to {savefilename}...')
         self._save_dataTensor(dataTensor, savefilename)
         
-    def illustrate_MSA(self):
+    def illustrate_MSA(self, dataTensor_path: Union[None, str]=None):
         
         """
-        Illustrate the current state of the MSA simulation. This method reads the saved data tensor FITS,
-        pulls the appropriate wavelength slice for a display emission line, and displays multiple diagnostic
-        visualizations such as the exposure map, spectra at specific pixels, and the full observed MSA stamp.
-        It also retrieves and saves particle property maps and generates property visualization panels.
+        Illustrate the MSA (Micro-Shutter Array) data.
+
+        This method generates a series of visualizations to illustrate the simulated MSA data,
+        including exposure maps, spectral properties, emission line maps, and observed mosaics.
+        The method can take an optional path to a data tensor FITS file; if none is provided, it
+        loads the default output in the save path.
+
+        Parameters
+        ----------
+        dataTensor_path : str or None, optional
+            The path to the data tensor FITS file. If None, uses default output location.
+
         """
         
         self.logger.info('Illustrating MSA...')
         
-        dataTensor_filename = os.path.join(self.save_path, f'MSA_dataTensor.fits')
+        if dataTensor_path is not None:
+            dataTensor_filename = dataTensor_path
+        else:
+            dataTensor_filename = os.path.join(self.save_path, f'MSA_dataTensor.fits')
+            
         if not os.path.exists(dataTensor_filename):
             self.logger.error(f'Data Tensor file {dataTensor_filename} does not exist.')
             return
@@ -3262,12 +2098,14 @@ class PostProcess:
         self._display_MSA_obs(
             dataTensor, cube_display, slice_wavelength, 
             displaySpectrumAtPixel, self.save_path)
+        self._display_observation(dataTensor, displaySpectrumAtPixel, 
+                                  self.save_path)
     
     def get_truth_properties(self, keep_defaults: bool=True, properties: list[str]=None, 
                              functions: Union[None, list[callable]]=[None]):
         
         """
-        Retrieve and calculate ground-truth properties for the dataset.
+        Retrieve, calculate and save ground-truth properties for the simulation.
 
         This method computes and saves various "truth" properties—such as metallicity, velocities,
         or mass maps—using supplied property-function pairs (or the defaults). It can be extended to
@@ -3284,10 +2122,6 @@ class PostProcess:
             A list of functions to compute the corresponding properties. Each function should accept the required
             arguments to compute the property for the dataset. Defaults to [None], falling back to defaults.
 
-        Returns
-        -------
-        None
-            The calculated properties are saved by side effect, as FITS maps and visualization panels.
         """
         
         self.logger.info('Getting truth properties...')
@@ -3303,10 +2137,11 @@ class PostProcess:
             self.logger.info('Calculating default properties...')
             
             default_properties = ['MetallicityStarFormingRegion', 'MetallicityGas', 'LOSVelocity', 
-                                  'Mass', 'VelDisp']
-            default_functions = [PostProcess.get_metallicity_for_starforming_region, 
-                                PostProcess.get_gas_metallicity, PostProcess.get_los_velocity, 
-                                PostProcess.get_mass, PostProcess.get_velocity_dispersion]
+                                  'Mass', 'VelDisp', 'NumberStarformingRegion']
+            default_functions = [property_metallicity_for_starforming_region, 
+                                property_gas_metallicity, property_los_velocity, 
+                                property_total_stellar_mass, property_velocity_dispersion, 
+                                property_number_starforming_region]
             
             prop_to_func = {prop: func for prop, func in 
                             zip(default_properties, default_functions)}

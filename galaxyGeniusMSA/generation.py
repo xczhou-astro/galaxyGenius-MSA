@@ -10,7 +10,18 @@ import logging
 class DataGeneration:
     
     def __init__(self, config: dict=None, workingDir: str=None):
+        """
+        DataGeneration checks the required files and runs SKIRT radiative transfer simulation. 
+        Afterwards, it moves and saves the output data cube and other relevant files to the data cube directory.
+        Finally, it cleans up the working directory. 
         
+        Parameters
+        ----------
+        config : dict, optional
+            Dictionary of configuration parameters from the Configuration class in config.py. If not provided, must specify `workingDir`.
+        workingDir : str, optional
+            Path to the working directory where intermediate and output files will be read and written. If not provided, deduced from `config`.
+        """
         if config is None and workingDir is None:
             raise ValueError('Either config or workingDir must be provided.')
         elif config is None and workingDir is not None:
