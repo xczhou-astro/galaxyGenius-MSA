@@ -68,7 +68,7 @@ Please set the `GALAXYGENIUS_DATA_DIR` environment variable in `~/.bashrc` to th
 
 ## Usage
 Please refer to `tutorial/pipeline.py` for an example.  
-For more details on configurations in `config.toml` and `config_MSA.toml`, and other usage, please refer to [documentation](https://) and `notebook/usage.ipynb`.  
+For more details on configurations in `config.toml` and `config_MSA.toml`, and other usage, please refer to [documentation](https://xczhou-astro.github.io/galaxyGenius-MSA/) and `notebook/usage.ipynb`.  
 
 To include more truth properties, please refer to `tutorial/moreTruthProperties.py` for detailed description.
 
