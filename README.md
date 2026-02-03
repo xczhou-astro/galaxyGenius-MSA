@@ -45,7 +45,7 @@ and
 
 [SKIRT](https://skirt.ugent.be/root/_home.html)  
 [illustris_python](https://github.com/illustristng/illustris_python)  
-[stpsf](https://stpsf.readthedocs.io/en/latest/#)
+[stpsf](https://stpsf.readthedocs.io/en/latest/#)  
 [jwst_backgrounds](https://github.com/spacetelescope/jwst_backgrounds)  
 
 Notes:  
