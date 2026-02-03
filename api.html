@@ -1,0 +1,1139 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; galaxyGenius-MSA 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Configuration" href="configuration.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            galaxyGenius-MSA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core-classes">Core Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuration">Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#galaxyGeniusMSA.config.Configuration"><code class="docutils literal notranslate"><span class="pre">Configuration</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#preprocess">PreProcess</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#galaxyGeniusMSA.preprocess.PreProcess"><code class="docutils literal notranslate"><span class="pre">PreProcess</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#datageneration">DataGeneration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#galaxyGeniusMSA.generation.DataGeneration"><code class="docutils literal notranslate"><span class="pre">DataGeneration</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#postprocess">PostProcess</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#galaxyGeniusMSA.postprocess.PostProcess"><code class="docutils literal notranslate"><span class="pre">PostProcess</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-galaxyGeniusMSA.utils">Utility Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.Units"><code class="docutils literal notranslate"><span class="pre">Units</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#galaxyGeniusMSA.utils.Units.__init__"><code class="docutils literal notranslate"><span class="pre">Units.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#galaxyGeniusMSA.utils.Units.get_cosmology"><code class="docutils literal notranslate"><span class="pre">Units.get_cosmology()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#galaxyGeniusMSA.utils.Units.get_snapRedshift"><code class="docutils literal notranslate"><span class="pre">Units.get_snapRedshift()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#galaxyGeniusMSA.utils.Units.unit_convention"><code class="docutils literal notranslate"><span class="pre">Units.unit_convention()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#galaxyGeniusMSA.utils.Units.explain"><code class="docutils literal notranslate"><span class="pre">Units.explain()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.galaxygenius_data_dir"><code class="docutils literal notranslate"><span class="pre">galaxygenius_data_dir()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.u2temp"><code class="docutils literal notranslate"><span class="pre">u2temp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.convert_to_rgb"><code class="docutils literal notranslate"><span class="pre">convert_to_rgb()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.split"><code class="docutils literal notranslate"><span class="pre">split()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.get_wavelength_scale"><code class="docutils literal notranslate"><span class="pre">get_wavelength_scale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.get_wavelength_unit"><code class="docutils literal notranslate"><span class="pre">get_wavelength_unit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.calc_pivot"><code class="docutils literal notranslate"><span class="pre">calc_pivot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.copyfile"><code class="docutils literal notranslate"><span class="pre">copyfile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.extend"><code class="docutils literal notranslate"><span class="pre">extend()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.to_json_safe"><code class="docutils literal notranslate"><span class="pre">to_json_safe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.custom_serialier"><code class="docutils literal notranslate"><span class="pre">custom_serialier()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.check_exist_and_assign_unit"><code class="docutils literal notranslate"><span class="pre">check_exist_and_assign_unit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.assign_unit"><code class="docutils literal notranslate"><span class="pre">assign_unit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.to_quantity_list"><code class="docutils literal notranslate"><span class="pre">to_quantity_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.read_properties"><code class="docutils literal notranslate"><span class="pre">read_properties()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.read_config"><code class="docutils literal notranslate"><span class="pre">read_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.read_config_corr"><code class="docutils literal notranslate"><span class="pre">read_config_corr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.read_json"><code class="docutils literal notranslate"><span class="pre">read_json()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.get_wave_for_emission_line"><code class="docutils literal notranslate"><span class="pre">get_wave_for_emission_line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.lookup_table"><code class="docutils literal notranslate"><span class="pre">lookup_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.utils.fage"><code class="docutils literal notranslate"><span class="pre">fage()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-galaxyGeniusMSA.properties">Properties Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.rotate_coordinates"><code class="docutils literal notranslate"><span class="pre">rotate_coordinates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.calc_los_velocity"><code class="docutils literal notranslate"><span class="pre">calc_los_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.calc_rotational_velocity"><code class="docutils literal notranslate"><span class="pre">calc_rotational_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.transform"><code class="docutils literal notranslate"><span class="pre">transform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.age_interp"><code class="docutils literal notranslate"><span class="pre">age_interp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.binned_statistic_2d_numba"><code class="docutils literal notranslate"><span class="pre">binned_statistic_2d_numba()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.calc_stats"><code class="docutils literal notranslate"><span class="pre">calc_stats()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.property_metallicity_for_starforming_region"><code class="docutils literal notranslate"><span class="pre">property_metallicity_for_starforming_region()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.property_gas_metallicity"><code class="docutils literal notranslate"><span class="pre">property_gas_metallicity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.property_los_velocity"><code class="docutils literal notranslate"><span class="pre">property_los_velocity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.property_velocity_dispersion"><code class="docutils literal notranslate"><span class="pre">property_velocity_dispersion()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.property_total_stellar_mass"><code class="docutils literal notranslate"><span class="pre">property_total_stellar_mass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#galaxyGeniusMSA.properties.property_number_starforming_region"><code class="docutils literal notranslate"><span class="pre">property_number_starforming_region()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">galaxyGenius-MSA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
+<p>This page provides detailed information about the galaxyGenius-MSA API.</p>
+<section id="core-classes">
+<h2>Core Classes<a class="headerlink" href="#core-classes" title="Link to this heading"></a></h2>
+<section id="configuration">
+<h3>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.config.Configuration">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.config.</span></span><span class="sig-name descname"><span class="pre">Configuration</span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/config.html#Configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.config.Configuration" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The Configuration class handles all configuration settings for galaxyGenius-MSA, including:</p>
+<ul class="simple">
+<li><p>Main configuration settings</p></li>
+<li><p>MSA-specific configurations</p></li>
+<li><p>Configuration validation and management</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.config.Configuration.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/config.html#Configuration.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.config.Configuration.__init__" title="Link to this definition"></a></dt>
+<dd><p>The configuration class loads and manages configuration files for galaxyGenius-MSA.
+It provides methods to read TOML configuration files, load main and MSA-specific settings,
+merge configurations, convert to saveable types, and save configurations to disk.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.config.Configuration.save_config">
+<span class="sig-name descname"><span class="pre">save_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/config.html#Configuration.save_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.config.Configuration.save_config" title="Link to this definition"></a></dt>
+<dd><p>Save the current configuration (conf) into ‘config.toml’ and ‘config_MSA.toml’.
+Converts values in conf to appropriate types for saving, updates self.config and self.msa_config dicts,
+then writes them to disk. This enables preserving configuration settings for future use.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.config.Configuration.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/config.html#Configuration.get_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.config.Configuration.get_config" title="Link to this definition"></a></dt>
+<dd><p>Retrieves a dictionary containing the full configuration by combining the main and MSA config files,
+assigning units where appropriate. This is typically used to access all current settings for
+pipeline or application use. If necessary, the configuration files are updated or (re)loaded before returning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A merged configuration dictionary with units assigned to relevant entries.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.config.Configuration.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/config.html#Configuration.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.config.Configuration.init" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="preprocess">
+<h3>PreProcess<a class="headerlink" href="#preprocess" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.preprocess.</span></span><span class="sig-name descname"><span class="pre">PreProcess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The PreProcess class handles the preparation of data for SKIRT simulation:</p>
+<ul class="simple">
+<li><p>Reading and processing subhalo data</p></li>
+<li><p>Preparing particle data</p></li>
+<li><p>Creating SKIRT input files</p></li>
+<li><p>Managing simulation parameters</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.__init__" title="Link to this definition"></a></dt>
+<dd><p>The PreProcess class handles the preprocessing of simulation data according to the provided configuration.
+It generates necessary particle files and SKIRT .ski file for the preparation of radiative transfer simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – The configuration dictionary from the Configuration class in config.py</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.get_subhalos">
+<span class="sig-name descname"><span class="pre">get_subhalos</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.get_subhalos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.get_subhalos" title="Link to this definition"></a></dt>
+<dd><p>Retrieve subhalos from TNG snapshot or from requests.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary containing basic information about subhalos: subhaloIDs, SFRs.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.subhalo">
+<span class="sig-name descname"><span class="pre">subhalo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subhaloID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.subhalo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.subhalo" title="Link to this definition"></a></dt>
+<dd><p>Specify one subhalo to be processed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subhaloID</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – subhaloID of the subhalo to be processed</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.get_default_params">
+<span class="sig-name descname"><span class="pre">get_default_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.get_default_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.get_default_params" title="Link to this definition"></a></dt>
+<dd><p>Returns default parameters and their units for stars and gas (if includeDust is True).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>returns</strong> – Returns a tuple, where the first element is a dictionary of star parameters and their units,
+and the second element is a dictionary of gas parameters and their units (if includeDust is True).
+If includeDust is False, then the tuple contains only the star parameters and their units.
+The format of the dictionaries is {parameter: unit}.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.includeParams">
+<span class="sig-name descname"><span class="pre">includeParams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">starParams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gasParams</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.includeParams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.includeParams" title="Link to this definition"></a></dt>
+<dd><p>Adds parameters to the list of parameters to include in the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>starParams</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – List of parameters to include for stars. If a list is given, it should contain the
+parameter names as strings, and the units are deduced from the parameter names.
+If a dict is given, it should be in the format {parameter: unit}.</p></li>
+<li><p><strong>gasParams</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – List of parameters to include for gas particles. If a list is given, it should contain
+the parameter names as strings, and the units are deduced from the parameter names.
+If a dict is given, it should be in the format {parameter: unit}.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments to include other parameters for other particle types.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>returns</strong> – Returns a tuple, where the first element is a dictionary of star parameters and their units,
+and the second element is a dictionary of gas parameters and their units (if includeDust is True).
+If includeDust is False, then the tuple contains only the star parameters and their units.
+The format of the dictionaries is {parameter: unit}.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.inputSubhaloParticleFile">
+<span class="sig-name descname"><span class="pre">inputSubhaloParticleFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subhaloParticleFile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhaloInfo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhaloInfoFile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.inputSubhaloParticleFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.inputSubhaloParticleFile" title="Link to this definition"></a></dt>
+<dd><p>Load a subhalo particle file in HDF5 format and associated subhalo metadata.</p>
+<p>This function initializes the subhalo context for further processing by ingesting particle data
+provided in <cite>subhaloParticleFile</cite>, and reading or constructing subhalo properties from either a
+dictionary (<cite>subhaloInfo</cite>) or a JSON info file (<cite>subhaloInfoFile</cite>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subhaloParticleFile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the subhalo particle file in HDF5 (.h5) format.</p></li>
+<li><p><strong>subhaloInfo</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – Dictionary with subhalo properties (‘id’, ‘halfmassrad_stars’, ‘pos_x’, ‘pos_y’, ‘pos_z’ are required, other parameters are optional).
+Required if <cite>subhaloInfoFile</cite> is not provided.</p></li>
+<li><p><strong>subhaloInfoFile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Path to a JSON file containing the subhalo information.
+Have higher priority than <cite>subhaloInfo</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.14)"><strong>FileNotFoundError</strong></a> – If the specified files do not exist.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If neither <cite>subhaloInfo</cite> nor <cite>subhaloInfoFile</cite> is provided.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.createFile">
+<span class="sig-name descname"><span class="pre">createFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paramNames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">partType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">saveFilename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.createFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.createFile" title="Link to this definition"></a></dt>
+<dd><p>Create a file containing the parameters of particles of a given type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>paramNames</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – List of parameter names.</p></li>
+<li><p><strong>partType</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Type of particles.</p></li>
+<li><p><strong>saveFilename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to save the file.</p></li>
+<li><p><strong>function</strong> (<em>callable</em>) – A function that processes particles and returns a dictionary of properties.
+The values of the dictionary should be astropy.units.Quantity objects.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.inputParticles">
+<span class="sig-name descname"><span class="pre">inputParticles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">partType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">particles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhaloInfo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhaloInfoFile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centralized</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.inputParticles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.inputParticles" title="Link to this definition"></a></dt>
+<dd><p>Input particle information for a given particle type (e.g., stars, gas, etc.) into the PreProcess object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>partType</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The type of particle being input (e.g., ‘star’, ‘gas’, ‘dm’, etc.).</p></li>
+<li><p><strong>particles</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary containing particle properties in astropy.units.Quantity objects.</p></li>
+<li><p><strong>subhaloInfo</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – Dictionary containing subhalo properties. Required if subhaloInfoFile is not provided. ‘id’, ‘halfmassrad_stars’, ‘pos_x’, ‘pos_y’, ‘pos_z’ are required.</p></li>
+<li><p><strong>subhaloInfoFile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Path to a JSON file containing subhalo information. Have higher priority compared to <cite>subhaloInfo</cite>.</p></li>
+<li><p><strong>centralized</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default False</em>) – If True, recenters the particle positions according to the subhalo information. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If neither subhaloInfo nor subhaloInfoFile is provided.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.14)"><strong>FileNotFoundError</strong></a> – If subhaloInfoFile is specified but does not exist.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.14)"><strong>KeyError</strong></a> – If required parameters are missing from subhaloInfo.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.modify_configs">
+<span class="sig-name descname"><span class="pre">modify_configs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arguments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.modify_configs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.modify_configs" title="Link to this definition"></a></dt>
+<dd><p>Modify the current configuration (<cite>self.config</cite>) based on a provided dictionary of arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>arguments</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – A dictionary where keys correspond to configuration options and values are the new settings
+to apply. If the configuration value is an astropy Quantity, the provided value is converted
+to the same unit.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.inputs">
+<span class="sig-name descname"><span class="pre">inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.inputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.inputs" title="Link to this definition"></a></dt>
+<dd><p>Accepts input data as a dictionary and sets the necessary configuration and physical properties.</p>
+<p>This method allows the user to provide essential subhalo and physical properties manually, such as
+stellar mass, half mass radius, and velocity. It modifies the configuration accordingly, performs type
+and unit checks, and sets up the <cite>partRegion</cite> for further processing. This method is intended for cases
+when inputs are not loaded from pre-defined data files but are instead provided directly by the user.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – <p>A dictionary containing at least the following keys:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>’SubhaloID’ (int): Identifier for the subhalo.</p></li>
+<li><p>’stellarMass’ (Quantity): Stellar mass with an astropy unit (preferably Msun).</p></li>
+<li><p>’halfStellarMassRadius’ (Quantity): Half-mass radius with an astropy unit (preferably kpc).</p></li>
+<li><p>’velocity’ (Quantity): Velocity with an astropy unit (preferably km/s).</p></li>
+</ul>
+</div></blockquote>
+<p>Additional configuration parameters can also be included. These will override existing configuration settings.</p>
+</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If required parameters are missing or have incorrect types/units.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.14)"><strong>FileNotFoundError</strong></a> – If required particle files are not found in the working directory.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.preprocess.PreProcess.prepare">
+<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arguments</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/preprocess.html#PreProcess.prepare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.preprocess.PreProcess.prepare" title="Link to this definition"></a></dt>
+<dd><p>Prepare and preprocess data by modifying configuration parameters, initializing or updating class attributes,
+and processing particle input and files based on the current input method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>arguments</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Dictionary of new configuration arguments to modify or update in the class instance. Default is None.</p>
+</dd>
+</dl>
+<div class="admonition-notes admonition">
+<p class="admonition-title">Notes</p>
+<dl class="simple">
+<dt>This function performs the following operations:</dt><dd><ol class="arabic simple">
+<li><p>Modifies the current configuration if <cite>arguments</cite> are provided.</p></li>
+<li><p>Calls class initialization.</p></li>
+<li><p>Depending on <cite>self.inputMethod</cite>, it acquires, processes, or loads particles from snapshots,
+direct input, subhalo files, or user-provided files.</p></li>
+<li><p>Saves processed particle data to HDF5 and creates a .ski configuration file.</p></li>
+</ol>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="datageneration">
+<h3>DataGeneration<a class="headerlink" href="#datageneration" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.generation.DataGeneration">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.generation.</span></span><span class="sig-name descname"><span class="pre">DataGeneration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workingDir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/generation.html#DataGeneration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.generation.DataGeneration" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The DataGeneration class manages the SKIRT radiative transfer simulation process:</p>
+<ul class="simple">
+<li><p>Running SKIRT simulations</p></li>
+<li><p>Managing input/output files</p></li>
+<li><p>Handling data cube generation</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.generation.DataGeneration.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workingDir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/generation.html#DataGeneration.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.generation.DataGeneration.__init__" title="Link to this definition"></a></dt>
+<dd><p>DataGeneration checks the required files and runs SKIRT radiative transfer simulation.
+Afterwards, it moves and saves the output data cube and other relevant files to the data cube directory.
+Finally, it cleans up the working directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – Dictionary of configuration parameters from the Configuration class in config.py. If not provided, must specify <cite>workingDir</cite>.</p></li>
+<li><p><strong>workingDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Path to the working directory where intermediate and output files will be read and written. If not provided, deduced from <cite>config</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.generation.DataGeneration.runSKIRT">
+<span class="sig-name descname"><span class="pre">runSKIRT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skirtPath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/generation.html#DataGeneration.runSKIRT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.generation.DataGeneration.runSKIRT" title="Link to this definition"></a></dt>
+<dd><p>Run SKIRT radiative transfer simulation.</p>
+<p>This method executes the SKIRT radiative transfer simulation using the configured parameters.
+It checks required files, runs SKIRT, saves the output data cube, and cleans up temporary files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>skirtPath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Path to SKIRT executable. If None, assumes ‘skirt’ is in PATH.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>0 if successful, exits with error otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="postprocess">
+<h3>PostProcess<a class="headerlink" href="#postprocess" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.postprocess.</span></span><span class="sig-name descname"><span class="pre">PostProcess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subhaloID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The PostProcess class handles the post-processing of simulation results:</p>
+<ul class="simple">
+<li><p>Processing data cubes</p></li>
+<li><p>Generating bandpass images</p></li>
+<li><p>Creating SEDs</p></li>
+<li><p>Visualizing results</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subhaloID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess.__init__" title="Link to this definition"></a></dt>
+<dd><p>PostProcess class for handling post-processing of JWST MSA-3D simulation.
+It loads the data cube and other relevant data, applying astrophysical and instrumental transformations,
+and producing synthetic observables compatible with JWST/NIRSpec MSA observations.
+Finally, it saves the resulting MSA data tensor and other relevant files to the result directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subhaloID</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The identifier of the target subhalo to be post-processed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess.input_bkg_interp">
+<span class="sig-name descname"><span class="pre">input_bkg_interp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interp_bkg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#scipy.interpolate.interp1d" title="(in SciPy v1.17.0)"><span class="pre">interp1d</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess.input_bkg_interp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess.input_bkg_interp" title="Link to this definition"></a></dt>
+<dd><p>Attach a background interpolation function to the PostProcess instance.</p>
+<p>This method allows the user to supply a precomputed background interpolation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>interp_bkg</strong> (<em>interp1d</em>) – Interpolated function of background vs. wavelength (e.g. created using scipy.interpolate.interp1d).
+Should accept an array of wavelengths (in angstrom) and return the background value(s) in MJy/sr.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess.input_psf">
+<span class="sig-name descname"><span class="pre">input_psf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">psf_cube</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess.input_psf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess.input_psf" title="Link to this definition"></a></dt>
+<dd><p>This method allows the user to supply a precomputed PSF cube with the same oversample in the config.
+PSF cube should be in a 3-dimensional array with dimensions (number of wavelengths, number of pixels, number of pixels).
+The number of wavelengths should be the same as the number of wavelengths in the data cube.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>psf_cube</strong> (<em>np.ndarray</em>) – PSF cube</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess.input_dataCube">
+<span class="sig-name descname"><span class="pre">input_dataCube</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataCube_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewing_angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess.input_dataCube"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess.input_dataCube" title="Link to this definition"></a></dt>
+<dd><p>Load a data cube file and initialize PostProcess attributes.</p>
+<p>This method sets up the PostProcess instance to use a specific dataCube file,
+extracting metadata, initializing relevant paths, configuration,
+constants, and data required for further processing and analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataCube_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The file path to the data cube (output by SKIRT, in .fits format) to be loaded.</p></li>
+<li><p><strong>viewing_angle</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>] </em><em>| </em><em>None</em><em>, </em><em>optional</em>) – The inclination (in degree) and azimuth (in degree) viewing angles to be associated with this data cube.
+If None, the angles will be extracted from the dataCube_path.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess.input_subhalo_info">
+<span class="sig-name descname"><span class="pre">input_subhalo_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subhalo_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess.input_subhalo_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess.input_subhalo_info" title="Link to this definition"></a></dt>
+<dd><p>Add or update subhalo information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subhalo_info</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – A dictionary containing subhalo-related properties or metadata to be associated
+with the object. These may include information such as mass_stars, vel_x, vel_y, vel_z, etc.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess.input_particle_file">
+<span class="sig-name descname"><span class="pre">input_particle_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess.input_particle_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess.input_particle_file" title="Link to this definition"></a></dt>
+<dd><p>Set the filename for the input particle file. This method updates the instance so that
+future operations use the provided particle file instead of a default path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>particle_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Path to the particle file to use as input for this object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess.create_MSA_dataTensor">
+<span class="sig-name descname"><span class="pre">create_MSA_dataTensor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess.create_MSA_dataTensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess.create_MSA_dataTensor" title="Link to this definition"></a></dt>
+<dd><p>Create the data tensor for the MSA simulation, including signal, noise, and sed arrays.</p>
+<p>This method orchestrates the full creation process for the MSA (Multi-Shutter Array) data tensor.
+It performs the following major steps:</p>
+<ul class="simple">
+<li><p>Define the wavelength sampling based on instrument resolution</p></li>
+<li><p>Retrieve or generate the relevant PSF cube</p></li>
+<li><p>Simulate detector sampling over the spatial and spectral grids</p></li>
+<li><p>Compute signal, noise, and sed arrays for each slitlet</p></li>
+<li><p>Assemble all outputs into a single, well-formatted data tensor (4 dimensions)</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p><strong>dataTensor</strong> – The full (n_slitlet_y, n_slitlet_x, 4, n_bins) array, ready for export or further use.</p>
+<p>Array structure:</p>
+<ul class="simple">
+<li><p>data[…,0,:] = wavelengths (middle points)</p></li>
+<li><p>data[…,1,:] = signal (flux or electron counts)</p></li>
+<li><p>data[…,2,:] = noise (flux or electron counts)</p></li>
+<li><p>data[…,3,:] = sed (flux or electron counts)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess.illustrate_MSA">
+<span class="sig-name descname"><span class="pre">illustrate_MSA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataTensor_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess.illustrate_MSA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess.illustrate_MSA" title="Link to this definition"></a></dt>
+<dd><p>Illustrate the MSA (Micro-Shutter Array) data.</p>
+<p>This method generates a series of visualizations to illustrate the simulated MSA data,
+including exposure maps, spectral properties, emission line maps, and observed mosaics.
+The method can take an optional path to a data tensor FITS file; if none is provided, it
+loads the default output in the save path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataTensor_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – The path to the data tensor FITS file. If None, uses default output location.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.postprocess.PostProcess.get_truth_properties">
+<span class="sig-name descname"><span class="pre">get_truth_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keep_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">functions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><span class="pre">callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[None]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/postprocess.html#PostProcess.get_truth_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.postprocess.PostProcess.get_truth_properties" title="Link to this definition"></a></dt>
+<dd><p>Retrieve, calculate and save ground-truth properties for the simulation.</p>
+<p>This method computes and saves various “truth” properties—such as metallicity, velocities,
+or mass maps—using supplied property-function pairs (or the defaults). It can be extended to
+include custom properties and functions by the user.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keep_defaults</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, include the default set of properties and functions in addition to any provided ones.
+If False, only use the user-supplied properties/functions. Default is True.</p></li>
+<li><p><strong>properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – A list of property names to compute (each must have an associated callable).</p></li>
+<li><p><strong>functions</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><em>callables</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – A list of functions to compute the corresponding properties. Each function should accept the required
+arguments to compute the property for the dataset. Defaults to [None], falling back to defaults.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="module-galaxyGeniusMSA.utils">
+<span id="utility-functions"></span><h2>Utility Functions<a class="headerlink" href="#module-galaxyGeniusMSA.utils" title="Link to this heading"></a></h2>
+<p>Utility functions for various operations including:</p>
+<ul class="simple">
+<li><p>Data conversion and manipulation</p></li>
+<li><p>File handling</p></li>
+<li><p>Mathematical operations</p></li>
+<li><p>Visualization helpers</p></li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.Units">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">Units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cosmology</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapRedshift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reinitialize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#Units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.Units" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.Units.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cosmology</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapRedshift</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reinitialize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#Units.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.Units.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.Units.get_cosmology">
+<span class="sig-name descname"><span class="pre">get_cosmology</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#Units.get_cosmology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.Units.get_cosmology" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.Units.get_snapRedshift">
+<span class="sig-name descname"><span class="pre">get_snapRedshift</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#Units.get_snapRedshift"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.Units.get_snapRedshift" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.Units.unit_convention">
+<span class="sig-name descname"><span class="pre">unit_convention</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#Units.unit_convention"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.Units.unit_convention" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.Units.explain">
+<span class="sig-name descname"><span class="pre">explain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#Units.explain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.Units.explain" title="Link to this definition"></a></dt>
+<dd><p>Default unit conventions are used by TNG simulation:</p>
+<ul class="simple">
+<li><p>distance: ckpc / h</p></li>
+<li><p>density: (10**10 * Msun) / (ckpc / h)^3</p></li>
+<li><p>mass: 10**10 * Msun</p></li>
+<li><p>sfr: Msun / yr</p></li>
+<li><p>velocity: km * sqrt(a) / s</p></li>
+<li><p>potential: (km / s)^2 / a</p></li>
+<li><p>temperature: K</p></li>
+<li><p>energy: (km / s)^2</p></li>
+</ul>
+<p>comoving quantities can be converted to physical ones by multiplying for the
+appropriate power of the scale factor a. For instance, to convert a length
+in physical units it is sufficient to multiply it by a, volumes need a factor a^3,
+densities a^-3 and so on.</p>
+<p>When using other simulations, the unit convention can be re-defined.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.setup_logging">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'galaxygenius.log'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_reconfigure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.setup_logging" title="Link to this definition"></a></dt>
+<dd><p>Set up logging configuration that can be used across multiple modules</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>log_file</strong> (default: <code class="docutils literal notranslate"><span class="pre">'galaxygenius.log'</span></code>) – Path to the log file</p></li>
+<li><p><strong>log_level</strong> (default: <code class="docutils literal notranslate"><span class="pre">20</span></code>) – Logging level (default: logging.INFO)</p></li>
+<li><p><strong>force_reconfigure</strong> (default: <code class="docutils literal notranslate"><span class="pre">False</span></code>) – If True, forces reconfiguration even if handlers exist.
+Use this after moving log files to update file handlers.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.galaxygenius_data_dir">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">galaxygenius_data_dir</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#galaxygenius_data_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.galaxygenius_data_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.u2temp">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">u2temp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u_energy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.astropy.org/en/stable/api/astropy.units.Quantity.html#astropy.units.Quantity" title="(in Astropy v7.2)"><span class="pre">Quantity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_e</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#u2temp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.u2temp" title="Link to this definition"></a></dt>
+<dd><p>u_energy: InternelEnergy
+x_e: ElectronAbundance</p>
+<p>return:
+T: temperatrure in K</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.convert_to_rgb">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">convert_to_rgb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bandpassImage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[2,</span> <span class="pre">3,</span> <span class="pre">5]</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#convert_to_rgb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.convert_to_rgb" title="Link to this definition"></a></dt>
+<dd><p>Convert the bandpass image to RGB image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bandpassImage</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>]</span>) – bandpass image</p></li>
+<li><p><strong>idx</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a></span>, default: <code class="docutils literal notranslate"><span class="pre">[2,</span> <span class="pre">3,</span> <span class="pre">5]</span></code>) – index of the bandpass image used to create the RGB image</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>RGB image</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>rgb</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.split">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">castType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.14)"><span class="pre">type</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#split"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.split" title="Link to this definition"></a></dt>
+<dd><p>Split the string into a list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>string</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – string to be split</p></li>
+<li><p><strong>castType</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code></a>]</span>, default: <code class="docutils literal notranslate"><span class="pre">None</span></code>) – type of the elements in the list</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of the split string</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>splits</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.get_wavelength_scale">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">get_wavelength_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#get_wavelength_scale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.get_wavelength_scale" title="Link to this definition"></a></dt>
+<dd><p>Get the wavelength scale of the filter</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – filename of the filter</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>wavelength scale of the filter</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>wavelength_scale</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.get_wavelength_unit">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">get_wavelength_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.astropy.org/en/stable/api/astropy.units.Unit.html#astropy.units.Unit" title="(in Astropy v7.2)"><span class="pre">Unit</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#get_wavelength_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.get_wavelength_unit" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.astropy.org/en/stable/api/astropy.units.Unit.html#astropy.units.Unit" title="(in Astropy v7.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Unit</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.calc_pivot">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">calc_pivot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataDir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">survey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#calc_pivot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.calc_pivot" title="Link to this definition"></a></dt>
+<dd><p>Calculate the pivot wavelength of the filter</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataDir</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – directory of the data</p></li>
+<li><p><strong>survey</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – survey name</p></li>
+<li><p><strong>filter</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – filter name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>pivot wavelength of the filter</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pivot</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.copyfile">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">copyfile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">tar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#copyfile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.copyfile" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.extend">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">extend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.astropy.org/en/stable/api/astropy.units.Quantity.html#astropy.units.Quantity" title="(in Astropy v7.2)"><span class="pre">Quantity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">nums</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#extend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.extend" title="Link to this definition"></a></dt>
+<dd><p>Extend the values to list with size consistent with nums</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>, <a class="reference external" href="https://docs.astropy.org/en/stable/api/astropy.units.Quantity.html#astropy.units.Quantity" title="(in Astropy v7.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Quantity</span></code></a>]</span>) – values to be extended</p></li>
+<li><p><strong>nums</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – number of values to be extended</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>extended values</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.to_json_safe">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">to_json_safe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#to_json_safe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.to_json_safe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.custom_serialier">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">custom_serialier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#custom_serialier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.custom_serialier" title="Link to this definition"></a></dt>
+<dd><p>Custom serializer for json dump</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>obj</strong> – object to be serialized</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>serialized object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>obj</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.check_exist_and_assign_unit">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">check_exist_and_assign_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#check_exist_and_assign_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.check_exist_and_assign_unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.assign_unit">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">assign_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#assign_unit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.assign_unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.to_quantity_list">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">to_quantity_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#to_quantity_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.to_quantity_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.read_properties">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">read_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workingDir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#read_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.read_properties" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.read_config">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">read_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#read_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.read_config" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.read_config_corr">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">read_config_corr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#read_config_corr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.read_config_corr" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.read_json">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">read_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#read_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.read_json" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.get_wave_for_emission_line">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">get_wave_for_emission_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#get_wave_for_emission_line"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.get_wave_for_emission_line" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.lookup_table">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">lookup_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#galaxyGeniusMSA.utils.Units" title="galaxyGeniusMSA.utils.Units"><span class="pre">Units</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#lookup_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.lookup_table" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.utils.fage">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.utils.</span></span><span class="sig-name descname"><span class="pre">fage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cosmology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Cosmology</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#scipy.interpolate.interp1d" title="(in SciPy v1.17.0)"><span class="pre">interp1d</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/utils.html#fage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.utils.fage" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#scipy.interpolate.interp1d" title="(in SciPy v1.17.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">interp1d</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-galaxyGeniusMSA.properties">
+<span id="properties-module"></span><h2>Properties Module<a class="headerlink" href="#module-galaxyGeniusMSA.properties" title="Link to this heading"></a></h2>
+<p>Properties calculation functions for various galaxy properties.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.rotate_coordinates">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">rotate_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#rotate_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.rotate_coordinates" title="Link to this definition"></a></dt>
+<dd><p>Rotates input 3D coordinates by inclination and azimuth angles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coordinates</strong> (<em>np.ndarray</em>) – Input array of shape (N, 3), where N is the number of points.</p></li>
+<li><p><strong>inclination</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Inclination angle (degrees). Rotation around Y axis.</p></li>
+<li><p><strong>azimuth</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Azimuth angle (degrees). Rotation around Z axis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Rotated coordinates array (N, 3).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.calc_los_velocity">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">calc_los_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">velocities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#calc_los_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.calc_los_velocity" title="Link to this definition"></a></dt>
+<dd><p>Compute the line-of-sight velocity for each particle given their velocity vectors
+and the observer’s viewing angles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>velocities</strong> (<em>np.ndarray</em>) – Velocity array of shape (N, 3), where each row is (vx, vy, vz).</p></li>
+<li><p><strong>inclination</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Inclination angle in degrees (rotation around Y axis).</p></li>
+<li><p><strong>azimuth</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Azimuth angle in degrees (rotation around Z axis).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of shape (N,) containing the line-of-sight velocity for each particle,
+projected according to the specified viewing angles.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.calc_rotational_velocity">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">calc_rotational_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordinates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">velocities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bulk_velocity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#calc_rotational_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.calc_rotational_velocity" title="Link to this definition"></a></dt>
+<dd><p>Compute the rotational (tangential) velocity for each particle in the galaxy, as observed
+from a given inclination and azimuthal angle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coordinates</strong> (<em>np.ndarray</em>) – Array of particle coordinates, shape (N, 3).</p></li>
+<li><p><strong>velocities</strong> (<em>np.ndarray</em>) – Array of particle velocities, shape (N, 3).</p></li>
+<li><p><strong>inclination</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Inclination angle in degrees (rotation around Y axis).</p></li>
+<li><p><strong>azimuth</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Azimuth angle in degrees (rotation around Z axis).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of shape (N,) containing the rotational (tangential) component of velocity
+for each particle, projected in the disk plane after deprojection to face-on.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.transform">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shiftPerpendicular</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shiftParallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.transform" title="Link to this definition"></a></dt>
+<dd><p>Apply a 2D affine transformation to 3D coordinates in the galaxy plane.</p>
+<p>This method rotates the input coordinates around the z-axis by the given angle <cite>rotate</cite>
+(in degrees), then shifts the coordinates by <cite>shiftPerpendicular</cite> along the y-axis
+and by <cite>shiftParallel</cite> along the x-axis, both in the rotated plane.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>np.ndarray</em>) – Array of shape (N, 3), the (x, y, z) coordinates to transform.</p></li>
+<li><p><strong>rotate</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Rotation angle in degrees (counter-clockwise; negative value rotates clockwise).</p></li>
+<li><p><strong>shiftPerpendicular</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Amount to shift along the y-axis (perpendicular direction) after rotation.</p></li>
+<li><p><strong>shiftParallel</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Amount to shift along the x-axis (parallel direction) after rotation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>shifted_coords</strong> – Array of shape (N, 3), the transformed coordinates.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.age_interp">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">age_interp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cosmology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Cosmology</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">FlatLambdaCDM(name='Planck15'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;Quantity</span> <span class="pre">67.74</span> <span class="pre">km</span> <span class="pre">/</span> <span class="pre">(Mpc</span> <span class="pre">s)&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Om0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3075</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tcmb0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;Quantity</span> <span class="pre">2.7255</span> <span class="pre">K&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Neff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.046</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_nu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;Quantity</span> <span class="pre">[0.</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0.06]</span> <span class="pre">eV&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ob0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0486)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#scipy.interpolate.interp1d" title="(in SciPy v1.17.0)"><span class="pre">interp1d</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#age_interp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.age_interp" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html#scipy.interpolate.interp1d" title="(in SciPy v1.17.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">interp1d</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.binned_statistic_2d_numba">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">binned_statistic_2d_numba</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_perpendicular</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_parallel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">statistic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#binned_statistic_2d_numba"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.binned_statistic_2d_numba" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.calc_stats">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">calc_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_perpendicular</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">statistic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#calc_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.calc_stats" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.property_metallicity_for_starforming_region">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">property_metallicity_for_starforming_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_perpendicular</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhalo_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#property_metallicity_for_starforming_region"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.property_metallicity_for_starforming_region" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.property_gas_metallicity">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">property_gas_metallicity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_perpendicular</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhalo_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#property_gas_metallicity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.property_gas_metallicity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.property_los_velocity">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">property_los_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_perpendicular</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhalo_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#property_los_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.property_los_velocity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.property_velocity_dispersion">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">property_velocity_dispersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_perpendicular</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhalo_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#property_velocity_dispersion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.property_velocity_dispersion" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.property_total_stellar_mass">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">property_total_stellar_mass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_perpendicular</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhalo_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#property_total_stellar_mass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.property_total_stellar_mass" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="galaxyGeniusMSA.properties.property_number_starforming_region">
+<span class="sig-prename descclassname"><span class="pre">galaxyGeniusMSA.properties.</span></span><span class="sig-name descname"><span class="pre">property_number_starforming_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">particle_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">inclination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_perpendicular</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_parallel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subhalo_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/galaxyGeniusMSA/properties.html#property_number_starforming_region"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#galaxyGeniusMSA.properties.property_number_starforming_region" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="configuration.html" class="btn btn-neutral float-left" title="Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

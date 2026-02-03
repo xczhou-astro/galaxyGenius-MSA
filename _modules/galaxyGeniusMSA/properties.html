@@ -1,0 +1,708 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>galaxyGeniusMSA.properties &mdash; galaxyGenius-MSA 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            galaxyGenius-MSA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">galaxyGenius-MSA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">galaxyGeniusMSA.properties</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for galaxyGeniusMSA.properties</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">u</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numba</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.cosmology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Cosmology</span><span class="p">,</span> <span class="n">Planck15</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">interp1d</span>
+
+<div class="viewcode-block" id="rotate_coordinates">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.rotate_coordinates">[docs]</a>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotate_coordinates</span><span class="p">(</span><span class="n">coordinates</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                        <span class="n">inclination</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+                        <span class="n">azimuth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotates input 3D coordinates by inclination and azimuth angles.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coordinates : np.ndarray</span>
+<span class="sd">        Input array of shape (N, 3), where N is the number of points.</span>
+<span class="sd">    inclination : float</span>
+<span class="sd">        Inclination angle (degrees). Rotation around Y axis.</span>
+<span class="sd">    azimuth : float</span>
+<span class="sd">        Azimuth angle (degrees). Rotation around Z axis.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        Rotated coordinates array (N, 3).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># 0. Convert degrees to radians</span>
+    <span class="n">inclination</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span>
+    <span class="n">azimuth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">azimuth</span><span class="p">)</span>
+    
+    <span class="c1"># 1. We need to rotate by NEGATIVE azimuth to undo the twist around Z</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="o">-</span><span class="n">azimuth</span>
+    <span class="n">R_azi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="mf">0.</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="mf">0.</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]</span>
+    <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="c1"># 2. We need to rotate by NEGATIVE inclination to undo the tilt around Y</span>
+    <span class="c1"># Note: Depending on your definition, if 0 is face-on, use -inclination.</span>
+    <span class="c1"># If 90 is face-on (equator), you might need -(inclination - pi/2).</span>
+    <span class="c1"># Assuming standard astronomy where i=0 is face-on:</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="o">-</span><span class="n">inclination</span>
+    <span class="n">R_inc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)],</span>
+        <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+        <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)]</span>
+    <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="c1"># The Order of Operations for De-projection:</span>
+    <span class="c1"># First apply Azimuth undo (R_azi), THEN Inclination undo (R_inc).</span>
+    <span class="c1"># Matrix math: R_total = R_inc @ R_azi</span>
+    <span class="c1"># Vector math: v_new = R_inc @ (R_azi @ v_old)</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">R_inc</span> <span class="o">@</span> <span class="n">R_azi</span>
+    
+    <span class="c1"># Apply to coordinates</span>
+    <span class="c1"># (N,3) @ (3,3).T is the correct way to apply matrix R to row vectors</span>
+    <span class="n">rotated_coords</span> <span class="o">=</span> <span class="n">coordinates</span> <span class="o">@</span> <span class="n">R</span><span class="o">.</span><span class="n">T</span>
+    
+    <span class="c1"># rotated_coords[:, 2] = -rotated_coords[:, 2]</span>
+    
+    <span class="k">return</span> <span class="n">rotated_coords</span></div>
+
+
+<div class="viewcode-block" id="calc_los_velocity">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.calc_los_velocity">[docs]</a>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_los_velocity</span><span class="p">(</span><span class="n">velocities</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+                    <span class="n">inclination</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the line-of-sight velocity for each particle given their velocity vectors</span>
+<span class="sd">    and the observer&#39;s viewing angles.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    velocities : np.ndarray</span>
+<span class="sd">        Velocity array of shape (N, 3), where each row is (vx, vy, vz).</span>
+<span class="sd">    inclination : float</span>
+<span class="sd">        Inclination angle in degrees (rotation around Y axis).</span>
+<span class="sd">    azimuth : float</span>
+<span class="sd">        Azimuth angle in degrees (rotation around Z axis).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        Array of shape (N,) containing the line-of-sight velocity for each particle,</span>
+<span class="sd">        projected according to the specified viewing angles.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    
+    <span class="n">inclination</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span>
+    <span class="n">azimuth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">azimuth</span><span class="p">)</span>
+    
+    <span class="c1"># Construct the unit vector pointing towards the observer</span>
+    <span class="c1"># Based on standard spherical coordinates:</span>
+    <span class="c1"># x = sin(inc) * cos(azi)</span>
+    <span class="c1"># y = sin(inc) * sin(azi)</span>
+    <span class="c1"># z = cos(inc)</span>
+    
+    <span class="n">los_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">azimuth</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">azimuth</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span>
+    <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="c1"># Calculate dot product: v_los = v . n_los</span>
+    <span class="c1"># velocities is (N, 3), los_vector is (3,)</span>
+    <span class="c1"># The result is (N,)</span>
+    <span class="n">los_velocity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">velocities</span><span class="p">,</span> <span class="n">los_vector</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">los_velocity</span></div>
+
+
+<div class="viewcode-block" id="calc_rotational_velocity">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.calc_rotational_velocity">[docs]</a>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_rotational_velocity</span><span class="p">(</span><span class="n">coordinates</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+                            <span class="n">velocities</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+                            <span class="n">inclination</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+                            <span class="n">azimuth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+                            <span class="n">bulk_velocity</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the rotational (tangential) velocity for each particle in the galaxy, as observed</span>
+<span class="sd">    from a given inclination and azimuthal angle.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coordinates : np.ndarray</span>
+<span class="sd">        Array of particle coordinates, shape (N, 3).</span>
+<span class="sd">    velocities : np.ndarray</span>
+<span class="sd">        Array of particle velocities, shape (N, 3).</span>
+<span class="sd">    inclination : float</span>
+<span class="sd">        Inclination angle in degrees (rotation around Y axis).</span>
+<span class="sd">    azimuth : float</span>
+<span class="sd">        Azimuth angle in degrees (rotation around Z axis).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">        Array of shape (N,) containing the rotational (tangential) component of velocity</span>
+<span class="sd">        for each particle, projected in the disk plane after deprojection to face-on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># 0. Convert degrees to radians</span>
+    <span class="n">inclination</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">inclination</span><span class="p">)</span>
+    <span class="n">azimuth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">azimuth</span><span class="p">)</span>
+    
+    <span class="c1"># 1. Define Rotation Matrices for De-projection (Inverse Rotation)</span>
+    <span class="c1"># We use negative angles to rotate from &quot;Observed&quot; -&gt; &quot;Face-on&quot;</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="o">-</span><span class="n">azimuth</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="o">-</span><span class="n">inclination</span>
+    
+    <span class="c1"># Rotation around Z (Undo Azimuth)</span>
+    <span class="n">R_azi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="mf">0.</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span>  <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="mf">0.</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]</span>
+    <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="c1"># Rotation around Y (Undo Inclination)</span>
+    <span class="n">R_inc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)],</span>
+        <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+        <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)]</span>
+    <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="c1"># Combined Rotation Matrix: Apply Azi first, then Inc</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">R_inc</span> <span class="o">@</span> <span class="n">R_azi</span>
+    
+    <span class="c1"># subtract bulk motion of the subhalo</span>
+    <span class="n">velocities</span> <span class="o">-=</span> <span class="n">bulk_velocity</span>
+    
+    <span class="c1"># 2. Rotate both Positions and Velocities</span>
+    <span class="c1"># We transform the entire frame so the galaxy lies in the XY plane</span>
+    <span class="n">pos_rot</span> <span class="o">=</span> <span class="n">coordinates</span> <span class="o">@</span> <span class="n">R</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">vel_rot</span> <span class="o">=</span> <span class="n">velocities</span> <span class="o">@</span> <span class="n">R</span><span class="o">.</span><span class="n">T</span>
+    
+    <span class="c1"># 3. Subtract center-of-mass velocity in the rotated frame</span>
+    <span class="c1"># This ensures particles near the center have zero mean velocity</span>
+    <span class="c1"># com_vx = np.mean(vel_rot[:, 0])</span>
+    <span class="c1"># com_vy = np.mean(vel_rot[:, 1])</span>
+    <span class="c1"># vel_rot[:, 0] -= com_vx</span>
+    <span class="c1"># vel_rot[:, 1] -= com_vy</span>
+    
+    <span class="c1"># 4. Extract In-Plane Components</span>
+    <span class="c1"># In the face-on frame, the LOS is the Z-axis.</span>
+    <span class="c1"># The &quot;perpendicular to LOS&quot; components are just x and y.</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">pos_rot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">pos_rot</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">vx</span> <span class="o">=</span> <span class="n">vel_rot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">vy</span> <span class="o">=</span> <span class="n">vel_rot</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    
+    <span class="c1"># 5. Calculate Planar Radius</span>
+    <span class="c1"># Avoid division by zero for the exact center</span>
+    <span class="n">R_plane</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    
+    <span class="c1"># 6. Calculate Tangential/Rotational Velocity</span>
+    <span class="c1"># Formula: Cross product magnitude in 2D / Radius</span>
+    <span class="c1"># v_rot = (r x v) / |r|  -&gt; (x*vy - y*vx) / R</span>
+    
+    <span class="c1"># with np.errstate(divide=&#39;ignore&#39;, invalid=&#39;ignore&#39;):</span>
+    <span class="c1">#     v_rot = (x * vy - y * vx) / R_plane</span>
+    
+    <span class="n">v_rot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">R_plane</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">R_plane</span><span class="p">)):</span>
+        <span class="n">v_rot</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">vy</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">vx</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="n">R_plane</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    
+    <span class="c1"># Handle the center point (where R_plane is 0)</span>
+    <span class="n">v_rot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">v_rot</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">v_rot</span></div>
+
+
+<div class="viewcode-block" id="transform">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.transform">[docs]</a>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="n">coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">rotate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+                <span class="n">shiftPerpendicular</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">shiftParallel</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a 2D affine transformation to 3D coordinates in the galaxy plane.</span>
+<span class="sd">    </span>
+<span class="sd">    This method rotates the input coordinates around the z-axis by the given angle `rotate`</span>
+<span class="sd">    (in degrees), then shifts the coordinates by `shiftPerpendicular` along the y-axis</span>
+<span class="sd">    and by `shiftParallel` along the x-axis, both in the rotated plane.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coords : np.ndarray</span>
+<span class="sd">        Array of shape (N, 3), the (x, y, z) coordinates to transform.</span>
+<span class="sd">    rotate : float</span>
+<span class="sd">        Rotation angle in degrees (counter-clockwise; negative value rotates clockwise).</span>
+<span class="sd">    shiftPerpendicular : float</span>
+<span class="sd">        Amount to shift along the y-axis (perpendicular direction) after rotation.</span>
+<span class="sd">    shiftParallel : float</span>
+<span class="sd">        Amount to shift along the x-axis (parallel direction) after rotation.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    shifted_coords : np.ndarray</span>
+<span class="sd">        Array of shape (N, 3), the transformed coordinates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># rotate the plane instead of the slitlets</span>
+    <span class="n">rotate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="n">rotate</span><span class="p">)</span>
+    
+    <span class="n">c</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">rotate</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">rotate</span><span class="p">)</span>
+    <span class="n">rotation_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+        <span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="o">-</span><span class="n">s</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+        <span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]</span>
+    <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">rotated_coords</span> <span class="o">=</span> <span class="n">coords</span> <span class="o">@</span> <span class="n">rotation_matrix</span><span class="o">.</span><span class="n">T</span>
+    
+    <span class="c1"># shift perpendicular and parallel are in y and x direction respectively</span>
+    <span class="c1"># similarly, shift the plane instead of the slitlets</span>
+    <span class="n">shift_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">shiftPerpendicular</span><span class="p">,</span> <span class="o">-</span><span class="n">shiftParallel</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">shifted_coords</span> <span class="o">=</span> <span class="n">rotated_coords</span> <span class="o">+</span> <span class="n">shift_vector</span>
+    
+    <span class="k">return</span> <span class="n">shifted_coords</span></div>
+
+
+<div class="viewcode-block" id="age_interp">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.age_interp">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">age_interp</span><span class="p">(</span><span class="n">cosmology</span><span class="p">:</span> <span class="n">Cosmology</span><span class="o">=</span><span class="n">Planck15</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">interp1d</span><span class="p">:</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">cosmology</span><span class="o">.</span><span class="n">age</span><span class="p">(</span><span class="n">z</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">Myr</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">fage</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;cubic&#39;</span><span class="p">,</span>
+                    <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="s1">&#39;extrapolate&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fage</span></div>
+
+
+<div class="viewcode-block" id="binned_statistic_2d_numba">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.binned_statistic_2d_numba">[docs]</a>
+<span class="nd">@numba</span><span class="o">.</span><span class="n">njit</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">binned_statistic_2d_numba</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">bins_perpendicular</span><span class="p">,</span> 
+    <span class="n">bins_parallel</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+    
+    <span class="c1"># Extract number of bins from bin edge arrays (length n+1 for n bins)</span>
+    <span class="n">nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bins_perpendicular</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">ny</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bins_parallel</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">statistic</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="s1">&#39;std&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;values must be provided for statistic in [&#39;mean&#39;, &#39;sum&#39;, &#39;std&#39;]&quot;</span><span class="p">)</span>
+    
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    
+    <span class="c1"># Initialize buffers</span>
+    <span class="c1"># res will store the primary statistic (sum, count, or mean)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="c1"># We need extra buffers for mean and std</span>
+    <span class="k">if</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span> <span class="ow">or</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;std&#39;</span><span class="p">:</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;std&#39;</span><span class="p">:</span>
+        <span class="n">sum_sq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">sums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">numba</span><span class="o">.</span><span class="n">prange</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">bins_perpendicular</span><span class="p">,</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">iy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">bins_parallel</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        
+        <span class="k">if</span> <span class="n">ix</span> <span class="o">&gt;=</span> <span class="n">nx</span><span class="p">:</span>
+            <span class="n">ix</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">ix</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ix</span> <span class="o">=</span> <span class="mi">0</span>
+            
+        <span class="k">if</span> <span class="n">iy</span> <span class="o">&gt;=</span> <span class="n">ny</span><span class="p">:</span>
+            <span class="n">iy</span> <span class="o">=</span> <span class="n">ny</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">iy</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">iy</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">ix</span> <span class="o">&lt;</span> <span class="n">nx</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">iy</span> <span class="o">&lt;</span> <span class="n">ny</span><span class="p">:</span>
+            
+            <span class="k">if</span> <span class="n">values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="mf">1.0</span>
+        
+            <span class="k">if</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;sum&#39;</span><span class="p">:</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">]</span> <span class="o">+=</span> <span class="n">val</span>
+            <span class="k">elif</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;count&#39;</span><span class="p">:</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">:</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">]</span> <span class="o">+=</span> <span class="n">val</span>
+                <span class="n">counts</span><span class="p">[</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;std&#39;</span><span class="p">:</span>
+                <span class="n">sums</span><span class="p">[</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">]</span> <span class="o">+=</span> <span class="n">val</span>
+                <span class="n">sum_sq</span><span class="p">[</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">]</span> <span class="o">+=</span> <span class="n">val</span> <span class="o">*</span> <span class="n">val</span>
+                <span class="n">counts</span><span class="p">[</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+    <span class="c1"># Post-processing for Mean and Std</span>
+    <span class="k">if</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">/=</span> <span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+                    
+    <span class="k">elif</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s1">&#39;std&#39;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="c1"># Variance = (SumSq / n) - (Mean^2)</span>
+                    <span class="n">mean</span> <span class="o">=</span> <span class="n">sums</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">c</span>
+                    <span class="n">variance</span> <span class="o">=</span> <span class="p">(</span><span class="n">sum_sq</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="n">c</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">mean</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                    <span class="c1"># Use max(0, var) to prevent tiny negative numbers from float imprecision</span>
+                    <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">variance</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">c</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Std of a single point is 0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    
+    <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+    
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="calc_stats">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.calc_stats">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calc_stats</span><span class="p">(</span><span class="n">coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                <span class="n">bins_perpendicular</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                <span class="n">bins_parallel</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                <span class="n">statistic</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    
+    <span class="k">if</span> <span class="n">values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">coords</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="n">bins_perpendicular</span> <span class="o">=</span> <span class="n">bins_perpendicular</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">bins_parallel</span> <span class="o">=</span> <span class="n">bins_parallel</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">binned_statistic_2d_numba</span><span class="p">(</span>
+        <span class="n">coords</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">coords</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">values</span><span class="p">,</span> 
+        <span class="n">bins_perpendicular</span><span class="o">=</span><span class="n">bins_perpendicular</span><span class="p">,</span>
+        <span class="n">bins_parallel</span><span class="o">=</span><span class="n">bins_parallel</span><span class="p">,</span>
+        <span class="n">statistic</span><span class="o">=</span><span class="n">statistic</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">stats</span></div>
+
+
+<div class="viewcode-block" id="property_metallicity_for_starforming_region">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.property_metallicity_for_starforming_region">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">property_metallicity_for_starforming_region</span><span class="p">(</span>
+    <span class="n">particle_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inclination</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+    <span class="n">bins_perpendicular</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+    <span class="n">transformation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">subhalo_info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">configs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    
+    <span class="n">fage</span> <span class="o">=</span> <span class="n">age_interp</span><span class="p">(</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;cosmology&#39;</span><span class="p">])</span>
+    
+    <span class="n">particles</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">particle_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_StellarFormationTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;GFM_StellarFormationTime&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">snapshot_age</span> <span class="o">=</span> <span class="n">fage</span><span class="p">(</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;snapRedshift&#39;</span><span class="p">])</span> <span class="c1"># in Myr</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">snapshot_age</span> <span class="o">-</span> <span class="n">fage</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_StellarFormationTime&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># star formation region mask</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;age&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_StellarFormationTime&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span>
+        
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kpc</span><span class="p">)</span>
+        
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_Metallicity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;GFM_Metallicity&#39;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit_metallicity</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+
+    <span class="c1"># rotate to observing direction</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">rotate_coordinates</span><span class="p">(</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">],</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">)</span>
+    
+    <span class="c1"># apply transformation for coords in x-y plane if rotate and shifts in config is not 0</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;rotate&#39;</span><span class="p">],</span> 
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftPerpendicular&#39;</span><span class="p">],</span>
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftParallel&#39;</span><span class="p">])</span>
+    
+    
+    <span class="n">metallicity</span> <span class="o">=</span> <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_Metallicity&#39;</span><span class="p">]</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">calc_stats</span><span class="p">(</span>
+        <span class="n">coords</span><span class="p">,</span> <span class="n">metallicity</span><span class="p">,</span> 
+        <span class="n">bins_perpendicular</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">stats</span><span class="p">,</span> <span class="n">unit_metallicity</span></div>
+
+
+<div class="viewcode-block" id="property_gas_metallicity">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.property_gas_metallicity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">property_gas_metallicity</span><span class="p">(</span><span class="n">particle_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inclination</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+                        <span class="n">bins_perpendicular</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+                        <span class="n">transformation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">subhalo_info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">configs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    
+    <span class="n">particles</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">particle_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="c1"># gas in PartType0, make sure the gases are included in preprocessing</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType0&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType0&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kpc</span><span class="p">)</span>
+        
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_Metallicity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType0&#39;</span><span class="p">][</span><span class="s1">&#39;GFM_Metallicity&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit_metallicity</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+        
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">rotate_coordinates</span><span class="p">(</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">],</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">)</span>
+    
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;rotate&#39;</span><span class="p">],</span> 
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftPerpendicular&#39;</span><span class="p">],</span>
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftParallel&#39;</span><span class="p">])</span>
+    
+    <span class="n">metallicity</span> <span class="o">=</span> <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_Metallicity&#39;</span><span class="p">]</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">calc_stats</span><span class="p">(</span>
+        <span class="n">coords</span><span class="p">,</span> <span class="n">metallicity</span><span class="p">,</span> 
+        <span class="n">bins_perpendicular</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">stats</span><span class="p">,</span> <span class="n">unit_metallicity</span></div>
+
+
+<div class="viewcode-block" id="property_los_velocity">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.property_los_velocity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">property_los_velocity</span><span class="p">(</span>
+    <span class="n">particle_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inclination</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+    <span class="n">bins_perpendicular</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+    <span class="n">transformation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">subhalo_info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">configs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    
+    <span class="n">particles</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">particle_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kpc</span><span class="p">)</span>
+        
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Velocities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Velocities&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit_velocities</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Velocities&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">rotate_coordinates</span><span class="p">(</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">],</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">)</span>
+    
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;rotate&#39;</span><span class="p">],</span> 
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftPerpendicular&#39;</span><span class="p">],</span>
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftParallel&#39;</span><span class="p">])</span>
+    
+    <span class="n">los_velocity</span> <span class="o">=</span> <span class="n">calc_los_velocity</span><span class="p">(</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Velocities&#39;</span><span class="p">],</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">)</span>
+        
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">calc_stats</span><span class="p">(</span>
+        <span class="n">coords</span><span class="p">,</span> <span class="n">los_velocity</span><span class="p">,</span> 
+        <span class="n">bins_perpendicular</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">stats</span><span class="p">,</span> <span class="n">unit_velocities</span></div>
+
+
+<div class="viewcode-block" id="property_velocity_dispersion">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.property_velocity_dispersion">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">property_velocity_dispersion</span><span class="p">(</span>
+    <span class="n">particle_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inclination</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+    <span class="n">bins_perpendicular</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">transformation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">subhalo_info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">configs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    
+    <span class="n">particles</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">particle_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kpc</span><span class="p">)</span>
+        
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Velocities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Velocities&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit_velocities</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Velocities&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">rotate_coordinates</span><span class="p">(</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">],</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">)</span>
+    
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;rotate&#39;</span><span class="p">],</span> 
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftPerpendicular&#39;</span><span class="p">],</span>
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftParallel&#39;</span><span class="p">])</span>
+    
+    <span class="n">los_velocity</span> <span class="o">=</span> <span class="n">calc_los_velocity</span><span class="p">(</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Velocities&#39;</span><span class="p">],</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">)</span>
+        
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">calc_stats</span><span class="p">(</span>
+        <span class="n">coords</span><span class="p">,</span> <span class="n">los_velocity</span><span class="p">,</span> 
+        <span class="n">bins_perpendicular</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="s1">&#39;std&#39;</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">stats</span><span class="p">,</span> <span class="n">unit_velocities</span></div>
+
+
+<div class="viewcode-block" id="property_total_stellar_mass">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.property_total_stellar_mass">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">property_total_stellar_mass</span><span class="p">(</span>
+    <span class="n">particle_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inclination</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+    <span class="n">bins_perpendicular</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+    <span class="n">transformation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">subhalo_info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">configs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    
+    <span class="n">particles</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">particle_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kpc</span><span class="p">)</span>
+        
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Masses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Masses&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit_masses</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Masses&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">rotate_coordinates</span><span class="p">(</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">],</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">)</span>
+    
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;rotate&#39;</span><span class="p">],</span> 
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftPerpendicular&#39;</span><span class="p">],</span>
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftParallel&#39;</span><span class="p">])</span>
+    
+    <span class="n">masses</span> <span class="o">=</span> <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Masses&#39;</span><span class="p">]</span>
+    
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">calc_stats</span><span class="p">(</span>
+        <span class="n">coords</span><span class="p">,</span> <span class="n">masses</span><span class="p">,</span> 
+        <span class="n">bins_perpendicular</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">,</span> <span class="n">statistic</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">stats</span><span class="p">,</span> <span class="n">unit_masses</span></div>
+
+
+<div class="viewcode-block" id="property_number_starforming_region">
+<a class="viewcode-back" href="../../api.html#galaxyGeniusMSA.properties.property_number_starforming_region">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">property_number_starforming_region</span><span class="p">(</span>
+    <span class="n">particle_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">inclination</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">azimuth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> 
+    <span class="n">bins_perpendicular</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">bins_parallel</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> 
+    <span class="n">transformation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">subhalo_info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">configs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    
+    <span class="n">fage</span> <span class="o">=</span> <span class="n">age_interp</span><span class="p">(</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;cosmology&#39;</span><span class="p">])</span>
+    
+    <span class="n">particles</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">particle_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_StellarFormationTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;GFM_StellarFormationTime&#39;</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">snapshot_age</span> <span class="o">=</span> <span class="n">fage</span><span class="p">(</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;snapRedshift&#39;</span><span class="p">])</span> <span class="c1"># in Myr</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">snapshot_age</span> <span class="o">-</span> <span class="n">fage</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_StellarFormationTime&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># star formation region mask</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;age&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;GFM_StellarFormationTime&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span>
+        
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;PartType4&#39;</span><span class="p">][</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">kpc</span><span class="p">)</span>
+        
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">rotate_coordinates</span><span class="p">(</span>
+        <span class="n">particles</span><span class="p">[</span><span class="s1">&#39;Coordinates&#39;</span><span class="p">],</span> <span class="n">inclination</span><span class="p">,</span> <span class="n">azimuth</span>
+    <span class="p">)</span>
+    
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;rotate&#39;</span><span class="p">],</span> 
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftPerpendicular&#39;</span><span class="p">],</span>
+                                    <span class="n">transformation</span><span class="p">[</span><span class="s1">&#39;shiftParallel&#39;</span><span class="p">])</span>
+    
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">calc_stats</span><span class="p">(</span>
+        <span class="n">coords</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> 
+        <span class="n">bins_perpendicular</span><span class="p">,</span> 
+        <span class="n">bins_parallel</span><span class="p">,</span> 
+        <span class="n">statistic</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">stats</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

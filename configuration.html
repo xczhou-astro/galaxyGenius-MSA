@@ -1,0 +1,447 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuration &mdash; galaxyGenius-MSA 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api.html" />
+    <link rel="prev" title="Welcome to galaxyGenius-MSA’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            galaxyGenius-MSA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#main-config">Main Config</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data-retrieval">Data Retrieval</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#skirt-simulation-settings">SKIRT Simulation Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#wavelength-settings">Wavelength Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spatial-settings">Spatial Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stellar-population-settings">Stellar Population Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mappings-settings-for-star-forming-regions">MAPPINGS Settings (for star-forming regions)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#toddlers-settings-for-star-forming-regions">TODDLERS Settings (for star-forming regions)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dust-ism-settings">Dust ISM Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#subhalo-selection">Subhalo Selection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#viewing-angles">Viewing Angles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#output-settings">Output Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#redshift-and-distance">Redshift and Distance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-settings">Performance Settings</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#msa-config">MSA Config</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#instrument-configuration">Instrument Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#slitlet-configuration">Slitlet Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#observation-configuration">Observation Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#background-configuration">Background Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#detector-settings">Detector Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spectral-settings">Spectral Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#display-settings">Display Settings</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">galaxyGenius-MSA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Configuration</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/configuration.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h1>
+<p>This page documents all configuration options available in <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> and <code class="docutils literal notranslate"><span class="pre">config_MSA.toml</span></code> files.</p>
+<section id="main-config">
+<h2>Main Config<a class="headerlink" href="#main-config" title="Link to this heading"></a></h2>
+<p>The main configuration file (<code class="docutils literal notranslate"><span class="pre">config.toml</span></code>) contains settings for data retrieval, SKIRT simulation, and general processing parameters.</p>
+<section id="data-retrieval">
+<h3>Data Retrieval<a class="headerlink" href="#data-retrieval" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">useRequests</span></code> (bool):</dt><dd><p>Whether to process subhalos on the fly using Web-based API requests.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">apiKey</span></code> (str):</dt><dd><p>Your API key for TNG simulations. Required if <code class="docutils literal notranslate"><span class="pre">useRequests</span></code> is <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">simulation</span></code> (str):</dt><dd><p>Simulation name. Options: <code class="docutils literal notranslate"><span class="pre">TNG50-1</span></code>, <code class="docutils literal notranslate"><span class="pre">TNG100-1</span></code>, <code class="docutils literal notranslate"><span class="pre">TNG300-1</span></code>, etc.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">hydrodynamicSolver</span></code> (str):</dt><dd><p>Hydrodynamic solver for gas particles. Can be <code class="docutils literal notranslate"><span class="pre">VoronoiMesh</span></code> (for TNG) or <code class="docutils literal notranslate"><span class="pre">smoothParticle</span></code> (for EAGLE).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">TNGPath</span></code> (str):</dt><dd><p>Home path for TNG simulation data on local filesystem.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">postprocessingPath</span></code> (str):</dt><dd><p>Home path for postprocessing data of TNG simulations on local filesystem. Both <code class="docutils literal notranslate"><span class="pre">TNGPath</span></code> and <code class="docutils literal notranslate"><span class="pre">postprocessingPath</span></code> are needed when reading data locally.</p>
+</dd>
+</dl>
+</section>
+<section id="skirt-simulation-settings">
+<h3>SKIRT Simulation Settings<a class="headerlink" href="#skirt-simulation-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">workingDir</span></code> (str):</dt><dd><p>Working directory for running SKIRT code.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">simulationMode</span></code> (str):</dt><dd><p>Simulation mode for SKIRT. Options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ExtinctionOnly</span></code>: Used when extinction and scattering should be considered</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DustEmission</span></code>: Used when extinction and scattering along with secondary emission should be considered</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NoMedium</span></code>: An ideal case with no dust elements</p></li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">includeDust</span></code> (bool):</dt><dd><p>Whether dust particles are considered. Should be <code class="docutils literal notranslate"><span class="pre">true</span></code> if <code class="docutils literal notranslate"><span class="pre">simulationMode</span></code> is <code class="docutils literal notranslate"><span class="pre">ExtinctionOnly</span></code> or <code class="docutils literal notranslate"><span class="pre">DustEmission</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">dustEmissionType</span></code> (str):</dt><dd><p>Dust emission type. Options: <code class="docutils literal notranslate"><span class="pre">Equilibrium</span></code> or <code class="docutils literal notranslate"><span class="pre">Stochastic</span></code>. Only used if <code class="docutils literal notranslate"><span class="pre">simulationMode</span></code> is <code class="docutils literal notranslate"><span class="pre">DustEmission</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">dustModel</span></code> (str):</dt><dd><p>Dust model. Options: <code class="docutils literal notranslate"><span class="pre">ZubkoDustMix</span></code>, <code class="docutils literal notranslate"><span class="pre">DraineLiDustMix</span></code>, or <code class="docutils literal notranslate"><span class="pre">ThemisDustMix</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">includeVelocity</span></code> (bool):</dt><dd><p>Whether to include velocity information for particle data.</p>
+</dd>
+</dl>
+</section>
+<section id="wavelength-settings">
+<h3>Wavelength Settings<a class="headerlink" href="#wavelength-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">minWaveRT</span></code> (str):</dt><dd><p>Minimum wavelength for radiative transfer, <em>not</em> in rest-frame. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;0.1</span> <span class="pre">um&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">maxWaveRT</span></code> (str):</dt><dd><p>Maximum wavelength for radiative transfer, <em>not</em> in rest-frame. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;2</span> <span class="pre">um&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">numWaveRT</span></code> (int):</dt><dd><p>Number of wavelength bins for radiative transfer.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">waveGridRT</span></code> (str):</dt><dd><p>Wavelength grid type for radiative transfer. Options: <code class="docutils literal notranslate"><span class="pre">Linear</span></code> or <code class="docutils literal notranslate"><span class="pre">Log</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">minWaveOutput</span></code> (str):</dt><dd><p>Minimum wavelength for output, <em>not</em> in rest-frame. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;0.97</span> <span class="pre">um&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">maxWaveOutput</span></code> (str):</dt><dd><p>Maximum wavelength for output, <em>not</em> in rest-frame. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;1.82</span> <span class="pre">um&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">numWaveOutput</span></code> (int):</dt><dd><p>Number of wavelength bins for output.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">waveGridOutput</span></code> (str):</dt><dd><p>Wavelength grid type for output. Options: <code class="docutils literal notranslate"><span class="pre">Linear</span></code> or <code class="docutils literal notranslate"><span class="pre">Log</span></code>.</p>
+</dd>
+</dl>
+</section>
+<section id="spatial-settings">
+<h3>Spatial Settings<a class="headerlink" href="#spatial-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">boxLengthScale</span></code> (float):</dt><dd><p>Particles are selected in a box with length = <code class="docutils literal notranslate"><span class="pre">halfStellarMassRadius</span> <span class="pre">*</span> <span class="pre">boxLengthScale</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">maxBoxLength</span></code> (str):</dt><dd><p>Maximum box length, in kpc. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;300</span> <span class="pre">kpc&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">minLevel</span></code> (int):</dt><dd><p>Minimum octree level refinement for dust calculation in SKIRT.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">maxLevel</span></code> (int):</dt><dd><p>Maximum octree level refinement for dust calculation in SKIRT.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">numPackets</span></code> (float):</dt><dd><p>Number of photon packets. Main parameter affecting the SNR of SKIRT simulation.</p>
+</dd>
+</dl>
+</section>
+<section id="stellar-population-settings">
+<h3>Stellar Population Settings<a class="headerlink" href="#stellar-population-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">starSEDFamily</span></code> (str):</dt><dd><p>SED family for quenched star particles (age &gt; 10 Myr). Options: <code class="docutils literal notranslate"><span class="pre">BC03</span></code> or <code class="docutils literal notranslate"><span class="pre">FSPS</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">initialMassFunction</span></code> (str):</dt><dd><p>Initial mass function for quenched star particles:</p>
+<ul class="simple">
+<li><p>For <code class="docutils literal notranslate"><span class="pre">BC03</span></code> SED family: <code class="docutils literal notranslate"><span class="pre">Chabrier</span></code> or <code class="docutils literal notranslate"><span class="pre">Salpeter</span></code></p></li>
+<li><p>For <code class="docutils literal notranslate"><span class="pre">FSPS</span></code> SED family: <code class="docutils literal notranslate"><span class="pre">Chabrier</span></code>, <code class="docutils literal notranslate"><span class="pre">Kroupa</span></code>, or <code class="docutils literal notranslate"><span class="pre">Salpeter</span></code></p></li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">starformingSEDFamily</span></code> (str):</dt><dd><p>SED family for star-forming regions. Options: <code class="docutils literal notranslate"><span class="pre">MAPPINGS</span></code> or <code class="docutils literal notranslate"><span class="pre">TODDLERS</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ageThreshold</span></code> (str):</dt><dd><p>Age threshold for discriminating star-forming or quenched star particles, in Myr. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;10</span> <span class="pre">Myr&quot;</span></code>).</p>
+</dd>
+</dl>
+</section>
+<section id="mappings-settings-for-star-forming-regions">
+<h3>MAPPINGS Settings (for star-forming regions)<a class="headerlink" href="#mappings-settings-for-star-forming-regions" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">logCompactnessMean</span></code> (float):</dt><dd><p>Logarithmic mean of compactness for star-forming star particles. See <a class="reference external" href="https://academic.oup.com/mnras/article/506/4/5703/6324023">Kapoor et al. 2021</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">logCompactnessStd</span></code> (float):</dt><dd><p>Logarithmic standard deviation of compactness for star-forming star particles. See <a class="reference external" href="https://academic.oup.com/mnras/article/506/4/5703/6324023">Kapoor et al. 2021</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">logPressure</span></code> (float):</dt><dd><p>Logarithmic pressure for star-forming star particles. log10[(Pressure/k_B)/cm^-3 K] = logPressure.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">constantCoveringFactor</span></code> (bool):</dt><dd><p>Whether to use constant covering factor.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">coveringFactor</span></code> (float):</dt><dd><p>Constant covering factor, if <code class="docutils literal notranslate"><span class="pre">constantCoveringFactor</span></code> is <code class="docutils literal notranslate"><span class="pre">true</span></code>. From <a class="reference external" href="https://iopscience.iop.org/article/10.1086/528711">Groves et al. 2008</a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PDRClearingTimescale</span></code> (str):</dt><dd><p>PDR clearing timescale, in Myr. Covering factor is f = e^(-t / PDRClearingTimescale) if <code class="docutils literal notranslate"><span class="pre">constantCoveringFactor</span></code> is <code class="docutils literal notranslate"><span class="pre">false</span></code>. From <a class="reference external" href="https://www.aanda.org/articles/aa/full_html/2024/12/aa51207-24/aa51207-24.html">Baes et al. 2024</a>. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;3</span> <span class="pre">Myr&quot;</span></code>).</p>
+</dd>
+</dl>
+</section>
+<section id="toddlers-settings-for-star-forming-regions">
+<h3>TODDLERS Settings (for star-forming regions)<a class="headerlink" href="#toddlers-settings-for-star-forming-regions" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">pahfraction</span></code> (str):</dt><dd><p>PAH fraction. Only used when <code class="docutils literal notranslate"><span class="pre">starformingSEDFamily</span></code> is <code class="docutils literal notranslate"><span class="pre">TODDLERS</span></code>. Options: <code class="docutils literal notranslate"><span class="pre">&quot;High&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Medium&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;Low&quot;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sedMode</span></code> (str):</dt><dd><p>SED mode for TODDLERS. Options: <code class="docutils literal notranslate"><span class="pre">SFRNormalized</span></code> or <code class="docutils literal notranslate"><span class="pre">Cloud</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">stellarTemplate</span></code> (str):</dt><dd><p>Stellar template for TODDLERS. Options: <code class="docutils literal notranslate"><span class="pre">SB99Kroupa100Sin</span></code>, <code class="docutils literal notranslate"><span class="pre">BPASSChab100Bin</span></code>, or <code class="docutils literal notranslate"><span class="pre">BPASSChab300Bin</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">sfrPeriod</span></code> (int):</dt><dd><p>SFR period in Myr. Only used in <code class="docutils literal notranslate"><span class="pre">SFRNormalized</span></code> mode. Can be <code class="docutils literal notranslate"><span class="pre">10</span></code> or <code class="docutils literal notranslate"><span class="pre">30</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">starFormationEfficiency</span></code> (float):</dt><dd><p>Star formation efficiency for TODDLERS.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cloudNumberDensity</span></code> (str):</dt><dd><p>Cloud number density for TODDLERS, in cm^-3. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;320</span> <span class="pre">cm^-3&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">alpha</span></code> (float):</dt><dd><p>Alpha parameter for power-law distribution of cloud mass for TODDLERS.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">scaling</span></code> (float):</dt><dd><p>Scaling factor for TODDLERS.</p>
+</dd>
+</dl>
+</section>
+<section id="dust-ism-settings">
+<h3>Dust ISM Settings<a class="headerlink" href="#dust-ism-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">temperatureThreshold</span></code> (str):</dt><dd><p>Temperature threshold in K. Gas particles with temperature lower than this threshold will be considered as dust. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;8000</span> <span class="pre">K&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">massFraction</span></code> (float):</dt><dd><p>Fraction of the metallic gas locked up in dust.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DISMModel</span></code> (str):</dt><dd><p>Dust-containing ISM (DISM) model. Options: <code class="docutils literal notranslate"><span class="pre">Camps_2016</span></code> or <code class="docutils literal notranslate"><span class="pre">Torrey_2012</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">numSilicateSizes</span></code> (int):</dt><dd><p>Number of bins for silicate dust grains.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">numGraphiteSizes</span></code> (int):</dt><dd><p>Number of bins for graphite dust grains.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">numPAHSizes</span></code> (int):</dt><dd><p>Number of bins for PAH dust grains.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">numHydrocarbonSizes</span></code> (int):</dt><dd><p>Number of bins for hydrocarbon dust grains.</p>
+</dd>
+</dl>
+</section>
+<section id="subhalo-selection">
+<h3>Subhalo Selection<a class="headerlink" href="#subhalo-selection" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">minStellarMass</span></code> (str):</dt><dd><p>Minimum stellar mass for subhalos, in Msun. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;1e10</span> <span class="pre">Msun&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">maxStellarMass</span></code> (float or str):</dt><dd><p>Maximum stellar mass for subhalos, in Msun. Use <code class="docutils literal notranslate"><span class="pre">inf</span></code> for infinite.</p>
+</dd>
+</dl>
+</section>
+<section id="viewing-angles">
+<h3>Viewing Angles<a class="headerlink" href="#viewing-angles" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">faceAndEdge</span></code> (bool):</dt><dd><p>Whether to use face-on and edge-on angles derived by angular momentum.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">numViews</span></code> (int):</dt><dd><p>Number of instrument views (observing directions).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">randomViews</span></code> (bool):</dt><dd><p>Whether to generate views from uniform distribution.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">inclinations</span></code> (list[int]):</dt><dd><p>Inclination angles for instrument views (in degrees). Required when <code class="docutils literal notranslate"><span class="pre">randomViews</span></code> is <code class="docutils literal notranslate"><span class="pre">false</span></code>. Separated by commas.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">azimuths</span></code> (list[int]):</dt><dd><p>Azimuth angles for instrument views (in degrees). Required when <code class="docutils literal notranslate"><span class="pre">randomViews</span></code> is <code class="docutils literal notranslate"><span class="pre">false</span></code>. Separated by commas.</p>
+</dd>
+</dl>
+</section>
+<section id="output-settings">
+<h3>Output Settings<a class="headerlink" href="#output-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">fieldOfView</span></code> (float):</dt><dd><p>Field of view for output, in arcsec. Equals box size if <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">pixelScale</span></code> (str):</dt><dd><p>Pixel scale for detector. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;0.1</span> <span class="pre">arcsec&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">oversample</span></code> (int):</dt><dd><p>Oversample factor. Oversamples both dataCube (SKIRT output) and PSF.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">unit</span></code> (str):</dt><dd><p>Unit type of image output. Options: <code class="docutils literal notranslate"><span class="pre">electron</span></code>, <code class="docutils literal notranslate"><span class="pre">flux_lambda</span></code>, or <code class="docutils literal notranslate"><span class="pre">flux_nu</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">electron</span></code>: electrons</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">flux_lambda</span></code>: erg / cm^2 / s / angstrom</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">flux_nu</span></code>: Jy</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="redshift-and-distance">
+<h3>Redshift and Distance<a class="headerlink" href="#redshift-and-distance" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">snapNum</span></code> (int):</dt><dd><p>Snapshot ID.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">snapRedshift</span></code> (float):</dt><dd><p>Snapshot redshift. Must be provided if <code class="docutils literal notranslate"><span class="pre">inLocal</span></code> is <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">viewRedshift</span></code> (float):</dt><dd><p>Viewing redshift, should be close to <code class="docutils literal notranslate"><span class="pre">snapRedshift</span></code>. For generating galaxies at continuous redshift with a small offset on <code class="docutils literal notranslate"><span class="pre">snapRedshift</span></code>. For example, <code class="docutils literal notranslate"><span class="pre">viewRedshift</span></code> can be <code class="docutils literal notranslate"><span class="pre">0.105</span></code> for snapshot-91 at <code class="docutils literal notranslate"><span class="pre">0.1</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">inLocal</span></code> (bool):</dt><dd><p>Whether to view galaxy in local cosmology.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">viewDistance</span></code> (str):</dt><dd><p>Viewing distance, in Mpc. Must be provided if <code class="docutils literal notranslate"><span class="pre">inLocal</span></code> is <code class="docutils literal notranslate"><span class="pre">true</span></code>. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;50</span> <span class="pre">Mpc&quot;</span></code>).</p>
+</dd>
+</dl>
+</section>
+<section id="performance-settings">
+<h3>Performance Settings<a class="headerlink" href="#performance-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">numThreads</span></code> (int):</dt><dd><p>Number of threads. No speedup for threads larger than 24.</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="msa-config">
+<h2>MSA Config<a class="headerlink" href="#msa-config" title="Link to this heading"></a></h2>
+<p>The MSA configuration file (<code class="docutils literal notranslate"><span class="pre">config_MSA.toml</span></code>) contains settings specific to JWST/NIRSpec Micro-Shutter Assembly (MSA) observations.</p>
+<section id="instrument-configuration">
+<h3>Instrument Configuration<a class="headerlink" href="#instrument-configuration" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">disperser</span></code> (str):</dt><dd><p>NIRSpec disperser.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">filter</span></code> (str):</dt><dd><p>NIRSpec filter.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">aperture</span></code> (str):</dt><dd><p>Telescope aperture size. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;6.5</span> <span class="pre">m&quot;</span></code>).</p>
+</dd>
+</dl>
+</section>
+<section id="slitlet-configuration">
+<h3>Slitlet Configuration<a class="headerlink" href="#slitlet-configuration" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">offsetParallel</span></code> (float):</dt><dd><p>Offset from center in parallel direction (dispersion direction), in arcsec.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">offsetPerpendicular</span></code> (float):</dt><dd><p>Offset from center in perpendicular direction (cross-dispersion direction), in arcsec.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">slitletSizePerpendicular</span></code> (str):</dt><dd><p>Slitlet size in perpendicular direction (cross-dispersion), in arcsec. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;0.46</span> <span class="pre">arcsec&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">slitletSizeParallel</span></code> (str):</dt><dd><p>Slitlet size in parallel direction (dispersion), in arcsec. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;0.2</span> <span class="pre">arcsec&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">supportBarSize</span></code> (str):</dt><dd><p>Support bar size between slitlets, in arcsec. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;0.07</span> <span class="pre">arcsec&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">rotate</span></code> (str):</dt><dd><p>Rotation of the slitlets, counter-clockwise. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;0</span> <span class="pre">deg&quot;</span></code>).</p>
+</dd>
+</dl>
+</section>
+<section id="observation-configuration">
+<h3>Observation Configuration<a class="headerlink" href="#observation-configuration" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">nDithers</span></code> (int):</dt><dd><p>Number of dither operations.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ditherSize</span></code> (str):</dt><dd><p>Dither size, in arcsec. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;0.075</span> <span class="pre">arcsec&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">nSlitlets</span></code> (int):</dt><dd><p>Number of slitlets.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">nSteps</span></code> (int):</dt><dd><p>Number of steps in parallel direction.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">exposureTime</span></code> (str):</dt><dd><p>Single exposure time. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;19.5</span> <span class="pre">min&quot;</span></code>).</p>
+</dd>
+</dl>
+</section>
+<section id="background-configuration">
+<h3>Background Configuration<a class="headerlink" href="#background-configuration" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">useJBT</span></code> (bool):</dt><dd><p>Whether to use background from <code class="docutils literal notranslate"><span class="pre">jwst_backgrounds</span></code> package.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">obsRA</span></code> (str):</dt><dd><p>Observation right ascension. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;223.555</span> <span class="pre">deg&quot;</span></code>). Required if <code class="docutils literal notranslate"><span class="pre">useJBT</span></code> is <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">obsDec</span></code> (str):</dt><dd><p>Observation declination. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;-54.395</span> <span class="pre">deg&quot;</span></code>). Required if <code class="docutils literal notranslate"><span class="pre">useJBT</span></code> is <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">threshold</span></code> (float):</dt><dd><p>Threshold parameter for background calculation.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">thisDay</span></code> (int):</dt><dd><p>Day of year for background calculation (1-365).</p>
+</dd>
+</dl>
+</section>
+<section id="detector-settings">
+<h3>Detector Settings<a class="headerlink" href="#detector-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">darkCurrent</span></code> (str):</dt><dd><p>Dark current in electrons per second. Units should be specified as <code class="docutils literal notranslate"><span class="pre">&quot;/s&quot;</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;0.01</span> <span class="pre">/s&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">readOut</span></code> (float):</dt><dd><p>Readout noise in electrons.</p>
+</dd>
+</dl>
+</section>
+<section id="spectral-settings">
+<h3>Spectral Settings<a class="headerlink" href="#spectral-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">numSpecWaveBins</span></code> (int):</dt><dd><p>Number of wavelength bins for spectrum rebinning at each pixel of detector.</p>
+</dd>
+</dl>
+</section>
+<section id="display-settings">
+<h3>Display Settings<a class="headerlink" href="#display-settings" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">displaySpectrumAtPixel</span></code> (list[list[int]]):</dt><dd><p>List of pixel coordinates <code class="docutils literal notranslate"><span class="pre">[y,</span> <span class="pre">x]</span></code> where spectra should be displayed.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">displayBoxSize</span></code> (str):</dt><dd><p>Box size for display, in arcsec. Must include units (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;4.0</span> <span class="pre">arcsec&quot;</span></code>).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">displayEmissionLines</span></code> (list[str]):</dt><dd><p>List of emission lines to display. Muts in format “line_name wavelength in angstrom”. For example, <code class="docutils literal notranslate"><span class="pre">&quot;Ha6563&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;[SII]6716&quot;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">displayAround</span></code> (str):</dt><dd><p>Around which overlapping cube slice displays.</p>
+</dd>
+</dl>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to galaxyGenius-MSA’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
