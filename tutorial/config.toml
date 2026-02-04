@@ -2,7 +2,7 @@
 useRequests = false
 
 # your api key for TNG simulations
-apiKey = "34a4698eb65e15b8ebfd65a336ae94bb"
+apiKey = "your_api_key"
 
 # simulation name
 simulation = "TNG50-1"
