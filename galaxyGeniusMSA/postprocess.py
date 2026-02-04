@@ -20,6 +20,7 @@ from itertools import product
 import time
 from typing import Union
 import rocket_fft
+import warnings
 
 from .utils import read_config, galaxygenius_data_dir, setup_logging
 from .utils import get_wave_for_emission_line, read_json
@@ -1336,6 +1337,10 @@ class PostProcess:
         display_array = np.sum(
             dataTensor[:, :, 1], axis=2)
         
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            display_array = np.log10(display_array)
+        
         unit_type = self.config['unit']
         unit_comment_dict = {
             'electron': 'electrons',
@@ -1362,7 +1367,7 @@ class PostProcess:
         ax.set_aspect('auto')
         divider = make_axes_locatable(ax)
         cax = divider.append_axes('right', size='5%', pad=0.1)
-        fig.colorbar(im, cax=cax, label=f'Flux [{unit_comment_dict[unit_type]}]')
+        fig.colorbar(im, cax=cax, label=f'Log10(Flux [{unit_comment_dict[unit_type]}])')
         
         # Set ticks and labels in arcsec
         ax.set_xticks(np.linspace(0, nx - 1, num=11))
